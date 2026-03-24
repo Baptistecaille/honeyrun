@@ -24,22 +24,25 @@
     - Result: SUCCESS (Maven 3.9.14, Java 17.0.16 detected)
     - Notes: Maven 3.9.11 was unavailable from distribution URL; installed latest 3.9.14.
   - **Deferred Work**: None
-  - **Commit**: Pending
+  - **Commit**: 5d80ed2 - Step 1: Setup Environment - Compile: N/A
 
 - **Step 2: Setup Baseline**
-  - **Status**: 🔘 Not Started
-  - **Changes Made**: None
+  - **Status**: ✅ Completed
+  - **Changes Made**:
+    - Executed baseline compile on JDK 17.
+    - Executed baseline full test run on JDK 17.
+    - Captured baseline result for comparison.
   - **Review Code Changes**:
-    - Sufficiency: N/A
-    - Necessity: N/A
-      - Functional Behavior: N/A
-      - Security Controls: N/A
+    - Sufficiency: ✅ All required changes present
+    - Necessity: ✅ All changes necessary
+      - Functional Behavior: ✅ Preserved
+      - Security Controls: ✅ Preserved
   - **Verification**:
-    - Command: N/A
-    - JDK: N/A
-    - Build tool: N/A
-    - Result: Not run
-    - Notes: None
+    - Command: `mvn -q clean test-compile && mvn -q clean test`
+    - JDK: /Users/baptistecaillerie/.jdk/jdk-17.0.16/jdk-17.0.16+8/Contents/Home/bin
+    - Build tool: /Users/baptistecaillerie/.maven/maven-3.9.14/bin/mvn
+    - Result: SUCCESS (compile success, tests success)
+    - Notes: No surefire report files generated; baseline discovered tests: 0.
   - **Deferred Work**: None
   - **Commit**: Pending
 
