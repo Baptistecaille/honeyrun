@@ -8,11 +8,11 @@ public class Hitbox {
 
 
     // Constructor
-    public Hitbox(double x, double y, double width, double height) {
+    public Hitbox(Coordinates position, double width, double height) {
 
 
-        this.x = x; 
-        this.y = y;
+        this.x = position.getX();
+        this.y = position.getY();
         this.width = width;
         this.height = height;
 
@@ -24,16 +24,16 @@ public class Hitbox {
 
     // Getters and setters
     public double getX() {
-        return x;
+        return this.x;
     }
     public double getY() {
-        return y;
+        return this.y;
     }
     public double getWidth() {
-        return width;
+        return this.width;
     }
     public double getHeight() {
-        return height;
+        return this.height;
     }
     public void setX(double x) {
         this.x = x;
@@ -49,9 +49,9 @@ public class Hitbox {
     }
 
     // Functions
-    public void update(double newX, double newY) {
-        this.x = newX;
-        this.y = newY;
+    public void update(Coordinates newPosition) {
+        this.x = newPosition.getX();
+        this.y = newPosition.getY();
     }
 
 

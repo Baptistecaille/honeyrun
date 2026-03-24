@@ -1,6 +1,10 @@
 package monsters;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Monsters {
 
@@ -17,15 +21,83 @@ public class Monsters {
     private Color color;
     //hitbox
     private Hitbox hitbox;
-    
+
+    // Movement threads
+    private Set<Integer> pressedKeys = Collections.synchronizedSet(new HashSet<>());
+    private boolean running = false;
+    private Thread movementThread;
+    private Thread hitboxThread;
 
     // Constructor
     public Monsters(double x, double y, double maxSpeed, Hitbox hitbox) {
         this.position = new Coordinates(x, y);
         this.maxSpeed = maxSpeed;
         this.hitbox = hitbox;
+    }
 
-        // update the position of the monster and, in parallel using Thread, the position of the hitbox according to the key pressed by the user (up, down, left, right)
+    /**
+     * Starts two threads:
+     *  - movementThread: updates the monster position at ~60 fps based on held keys.
+     *  - hitboxThread:   keeps the hitbox in sync with the monster position, in parallel.
+     */
+    public void startMovement() {
+        running = true;
+
+        // Thread 1 – update monster position based on pressed keys
+        movementThread = new Thread(() -> {
+            long lastTime = System.currentTimeMillis();
+            while (running) {
+                // Calculate time delta for smoother movement
+                long now = System.currentTimeMillis();
+                double dt = (now - lastTime) / 1000.0; // seconds elapsed
+                lastTime = now;
+
+                double dx = 0, dy = 0;
+                if (pressedKeys.contains(KeyEvent.VK_UP)    || pressedKeys.contains(KeyEvent.VK_W)) dy -= maxSpeed;
+                if (pressedKeys.contains(KeyEvent.VK_DOWN)  || pressedKeys.contains(KeyEvent.VK_S)) dy += maxSpeed;
+                if (pressedKeys.contains(KeyEvent.VK_LEFT)  || pressedKeys.contains(KeyEvent.VK_A)) dx -= maxSpeed;
+                if (pressedKeys.contains(KeyEvent.VK_RIGHT) || pressedKeys.contains(KeyEvent.VK_D)) dx += maxSpeed;
+
+                vx = dx;
+                vy = dy;
+
+                // Update heading (normalized direction vector)
+                double speed = Math.hypot(vx, vy); // hypot calculates sqrt(sum of squares)
+                if (speed > 0) {
+                    hx = vx / speed;
+                    hy = vy / speed;
+                }
+
+                synchronized (position) {
+                    position.setX(position.getX() + vx * dt); // Using time delta previously calculated 
+                    position.setY(position.getY() + vy * dt);
+                }
+
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+            }
+        }, "monster-movement");
+
+        // Thread 2 – sync hitbox position to monster position, in parallel
+        hitboxThread = new Thread(() -> {
+            while (running) {
+                double x, y;
+                synchronized (position) {
+                    x = position.getX();
+                    y = position.getY();
+                }
+                hitbox.update(this.position); // Update hitbox position to match monster position
+
+                //try { Thread.sleep(5); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+            }
+        }, "monster-hitbox");
+
+        movementThread.start();
+        hitboxThread.start();
+    }
+
+    /** Stops both movement threads. */
+    public void stopMovement() {
+        running = false;
     }
 
     // Getters and setters
