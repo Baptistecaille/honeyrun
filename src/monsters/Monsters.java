@@ -19,6 +19,12 @@ public class Monsters {
     //hitbox
     private Hitbox hitbox;
 
+    // Movement bounds (e.g. game window)
+    private double minX = 0.0;
+    private double minY = 0.0;
+    private double maxX = Double.POSITIVE_INFINITY;
+    private double maxY = Double.POSITIVE_INFINITY;
+
     // Movement threads
     private boolean running = false;
     private Thread movementThread;
@@ -67,6 +73,24 @@ public class Monsters {
                 synchronized (position) {
                     position.setX(position.getX() + vx * dt); // Using time delta previously calculated 
                     position.setY(position.getY() + vy * dt); // Using time delta previously calculated 
+
+                    // Bounce on horizontal edges
+                    if (position.getX() < minX) {
+                        position.setX(minX);
+                        vx = Math.abs(vx);
+                    } else if (position.getX() > maxX) {
+                        position.setX(maxX);
+                        vx = -Math.abs(vx);
+                    }
+
+                    // Bounce on vertical edges
+                    if (position.getY() < minY) {
+                        position.setY(minY);
+                        vy = Math.abs(vy);
+                    } else if (position.getY() > maxY) {
+                        position.setY(maxY);
+                        vy = -Math.abs(vy);
+                    }
                 }
 
                 try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // sleep for 16ms to match 60 fps
@@ -163,5 +187,12 @@ public class Monsters {
     }
     public void setHitbox(Hitbox hitbox) {
         this.hitbox = hitbox;
+    }
+
+    public void setMovementBounds(double minX, double minY, double maxX, double maxY) {
+        this.minX = minX;
+        this.minY = minY;
+        this.maxX = Math.max(minX, maxX);
+        this.maxY = Math.max(minY, maxY);
     }
 }

@@ -14,8 +14,12 @@ import monsters.Monsters;
 public class Interface {
 
     public static void main(String[] args) {
+        final int windowWidth = 800;
+        final int windowHeight = 600;
+
         Hitbox hitbox = new Hitbox(new Coordinates(0, 0), 40.0, 40.0);
         Monsters monster = new Monsters(380, 280, 60, hitbox);
+        monster.setMovementBounds(0, 0, windowWidth - hitbox.getWidth(), windowHeight - hitbox.getHeight());
         monster.setColor(Color.RED);
         monster.startMovement();
 
@@ -32,7 +36,7 @@ public class Interface {
             }
         };
         panel.setBackground(Color.WHITE);
-        panel.setPreferredSize(new Dimension(800, 600));
+        panel.setPreferredSize(new Dimension(windowWidth, windowHeight));
 
         JFrame frame = new JFrame("Honeyrun Monster Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
