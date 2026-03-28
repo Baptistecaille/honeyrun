@@ -1,10 +1,7 @@
 package monsters;
 
 import java.awt.Color;
-import java.awt.event.KeyEvent;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Random;
 
 public class Monsters {
 
@@ -23,10 +20,10 @@ public class Monsters {
     private Hitbox hitbox;
 
     // Movement threads
-    private Set<Integer> pressedKeys = Collections.synchronizedSet(new HashSet<>());
     private boolean running = false;
     private Thread movementThread;
     private Thread hitboxThread;
+    private final Random random = new Random();
 
     // Constructor
     public Monsters(double x, double y, double maxSpeed, Hitbox hitbox) {
@@ -36,30 +33,29 @@ public class Monsters {
     }
 
     /**
-     * Starts two threads:
-     *  - movementThread: updates the monster position at ~60 fps based on held keys.
+     * Starts two threads to parallelise movement and hitbox updates:
+     *  - movementThread: updates the monster position at around 60 fps with random directions.
      *  - hitboxThread:   keeps the hitbox in sync with the monster position, in parallel.
      */
     public void startMovement() {
         running = true;
 
-        // Thread 1 – update monster position based on pressed keys
+        // Thread 1 – update monster position with random direction changes every 3s
         movementThread = new Thread(() -> {
             long lastTime = System.currentTimeMillis();
+            long lastDirectionChange = lastTime;
+            chooseRandomDirection();
+
             while (running) {
                 // Calculate time delta for smoother movement
                 long now = System.currentTimeMillis();
                 double dt = (now - lastTime) / 1000.0; // seconds elapsed
                 lastTime = now;
 
-                double dx = 0, dy = 0;
-                if (pressedKeys.contains(KeyEvent.VK_UP)    || pressedKeys.contains(KeyEvent.VK_W)) dy -= maxSpeed;
-                if (pressedKeys.contains(KeyEvent.VK_DOWN)  || pressedKeys.contains(KeyEvent.VK_S)) dy += maxSpeed;
-                if (pressedKeys.contains(KeyEvent.VK_LEFT)  || pressedKeys.contains(KeyEvent.VK_A)) dx -= maxSpeed;
-                if (pressedKeys.contains(KeyEvent.VK_RIGHT) || pressedKeys.contains(KeyEvent.VK_D)) dx += maxSpeed;
-
-                vx = dx;
-                vy = dy;
+                if (now - lastDirectionChange >= 3000) {
+                    chooseRandomDirection();
+                    lastDirectionChange = now;
+                }
 
                 // Update heading (normalized direction vector)
                 double speed = Math.hypot(vx, vy); // hypot calculates sqrt(sum of squares)
@@ -70,10 +66,10 @@ public class Monsters {
 
                 synchronized (position) {
                     position.setX(position.getX() + vx * dt); // Using time delta previously calculated 
-                    position.setY(position.getY() + vy * dt);
+                    position.setY(position.getY() + vy * dt); // Using time delta previously calculated 
                 }
 
-                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // sleep for 16ms to match 60 fps
             }
         }, "monster-movement");
 
@@ -98,6 +94,19 @@ public class Monsters {
     /** Stops both movement threads. */
     public void stopMovement() {
         running = false;
+    }
+
+    private void chooseRandomDirection() {
+        // Choose one of the 8 cardinal/diagonal directions.
+        int[][] dirs = {
+            { 1, 0}, {-1, 0}, {0, 1}, {0,-1},
+            { 1, 1}, { 1,-1}, {-1, 1}, {-1,-1}
+        };
+
+        int[] d = dirs[random.nextInt(dirs.length)];
+        double mag = Math.hypot(d[0], d[1]);
+        vx = (d[0] / mag) * maxSpeed;
+        vy = (d[1] / mag) * maxSpeed;
     }
 
     // Getters and setters
@@ -155,8 +164,4 @@ public class Monsters {
     public void setHitbox(Hitbox hitbox) {
         this.hitbox = hitbox;
     }
-
-    // TODO: Define the next random movement made by the monster 
-
-
 }
