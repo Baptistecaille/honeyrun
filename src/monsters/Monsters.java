@@ -3,6 +3,9 @@ package monsters;
 import java.awt.Color;
 import java.util.Random;
 
+import Tools.Coordinates;
+import Tools.Hitbox;
+
 public class Monsters {
 
     // Attributes

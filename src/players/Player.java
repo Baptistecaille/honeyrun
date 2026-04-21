@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import monsters.Coordinates;
-import monsters.Hitbox;
+import Tools.Coordinates;
+import Tools.Hitbox;
 import monsters.Monsters;
 
 public class Player {
