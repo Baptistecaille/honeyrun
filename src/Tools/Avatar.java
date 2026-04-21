@@ -1,7 +1,7 @@
 package Tools;
 import Tools.Coordinates;
 import Tools.Hitbox;
-import BufferedImage // image
+import java.awt.image.BufferedImage; // image
 
 public class Avatar {
     
