@@ -16,12 +16,18 @@ import java.sql.SQLException;
  * @author cpoussie
  */
 public class Player {
-    
+
+    private int id;
     private boolean toucheHaut, toucheBas, toucheDroite, toucheGauche;
     private Avatar avatar;
     private Coordinates spawn;
     private String name;
     protected Map map;
+    private int x;
+    private int y;
+    private boolean hasHoney;
+    private boolean hasWon;
+    private int lives = 3;
 
     public void miseAJour() {
 
@@ -92,5 +98,23 @@ public class Player {
     public void setToucheDroite(boolean etat) {
         this.toucheDroite = etat;
     }
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public int getX() { return x; }
+    public void setX(int x) { this.x = x; }
+
+    public int getY() { return y; }
+    public void setY(int y) { this.y = y; }
+
+    public boolean isHasHoney() { return hasHoney; }
+    public void setHasHoney(boolean hasHoney) { this.hasHoney = hasHoney; }
+
+    public boolean isHasWon() { return hasWon; }
+    public void setHasWon(boolean hasWon) { this.hasWon = hasWon; }
+
+    public int getLives() { return lives; }
+    public void setLives(int lives) { this.lives = lives; }
 
 }
