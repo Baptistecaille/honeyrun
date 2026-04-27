@@ -117,39 +117,6 @@ public class Carte {
             e.printStackTrace();
         }
     }
-
-    /**
-     * Constructeur de la classe Carte.
-     * Charge le tileset depuis les ressources du projet et découpe
-     * chaque tuile en sous-images de taille `tailleTuile` x `tailleTuile`.
-     *
-     * Le tileset utilisé est : "images/tileSetMinecraft32x32.png"
-     * Il est supposé contenir 176 tuiles disposées en grille de 16 colonnes.
-     */
-//    public Carte() {
-//        try {
-//            // Chargement de l'image tileset depuis les ressources (chemin relatif au classpath)
-//            BufferedImage tileset = ImageIO.read(getClass().getResource("images/tileSetMinecraft32x32.png"));
-//
-//            // Initialisation du tableau pour stocker 176 tuiles individuelles
-//            tuiles = new BufferedImage[176];
-//
-//            for (int i = 0; i < tuiles.length; i++) {
-//                // Calcul de la position (x, y) de la tuile i dans le tileset
-//                // Les tuiles sont disposées sur 16 colonnes
-//                int x = (i % 16) * tailleTuile; // Position horizontale
-//                int y = (i / 16) * tailleTuile; // Position verticale
-//
-//                // Découpe de la sous-image correspondant à la tuile i
-//                tuiles[i] = tileset.getSubimage(x, y, tailleTuile, tailleTuile);
-//            }
-//
-//        } catch (IOException ex) {
-//            // Journalisation de l'erreur si le fichier image est introuvable ou illisible
-//            Logger.getLogger(Carte.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
-
     /**
      * Méthode de mise à jour de la carte.
      * Actuellement vide — prévu pour de la logique d'animation ou d'événements.
@@ -166,6 +133,37 @@ public class Carte {
      *
      * @param contexte Le contexte graphique 2D dans lequel dessiner les tuiles
      */
+
+    
+    public void rendu(Graphics2D contexte, int x, int y) {
+    for (int i = 0; i < decor.length; i++) {
+        for (int j = 0; j < decor[i].length; j++) {
+            int tuileParDefaut = 26;
+            int numeroTuile;
+
+            // Vérifie si on est hors limites
+            if (i < 0 || i >= decor.length || j < 0 || j >= decor[0].length) {
+                numeroTuile = tuileParDefaut; // on remplit le trou
+            } 
+            else {
+                numeroTuile = decor[i][j];
+            }
+            
+            if (numeroTuile <= 0) continue;
+            
+            int zoom = 3; 
+            int offsetX = 10;
+            int offsetY = 5;
+            
+            if (numeroTuile < tuiles.length) { // on dessine notre tuile
+                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - offsetY + 5),tailleTuile * zoom,tailleTuile * zoom,null);
+            }
+        }
+    }
+  }
+}
+
+ 
 //    public void rendu(Graphics2D contexte, int x , int y) {
 //        // Parcours de chaque ligne de la carte
 //        for (int i = 0; i < decor.length; i++) {
@@ -191,21 +189,26 @@ public class Carte {
 //            }
 //        }
 //    }
-    public void rendu(Graphics2D contexte, int x, int y) {
-    for (int i = 0; i < decor.length; i++) {
-        for (int j = 0; j < decor[i].length; j++) {
-
-            int numeroTuile = decor[i][j];
-
-            // -1 (ou la valeur que tu choisis) = case transparente, on saute
-            if (numeroTuile < 0) continue;
-
-            int zoom = 1;
-            if (numeroTuile < tuiles.length) {
-                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + 10),zoom * tailleTuile * (i - y + 5),tailleTuile * zoom,tailleTuile * zoom,null);
-            }
-        }
-    }
-}
-}
- 
+//    public Carte() {
+//        try {
+//            // Chargement de l'image tileset depuis les ressources (chemin relatif au classpath)
+//            BufferedImage tileset = ImageIO.read(getClass().getResource("images/tileSetMinecraft32x32.png"));
+//
+//            // Initialisation du tableau pour stocker 176 tuiles individuelles
+//            tuiles = new BufferedImage[176];
+//
+//            for (int i = 0; i < tuiles.length; i++) {
+//                // Calcul de la position (x, y) de la tuile i dans le tileset
+//                // Les tuiles sont disposées sur 16 colonnes
+//                int x = (i % 16) * tailleTuile; // Position horizontale
+//                int y = (i / 16) * tailleTuile; // Position verticale
+//
+//                // Découpe de la sous-image correspondant à la tuile i
+//                tuiles[i] = tileset.getSubimage(x, y, tailleTuile, tailleTuile);
+//            }
+//
+//        } catch (IOException ex) {
+//            // Journalisation de l'erreur si le fichier image est introuvable ou illisible
+//            Logger.getLogger(Carte.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//    }
