@@ -166,22 +166,46 @@ public class Carte {
      *
      * @param contexte Le contexte graphique 2D dans lequel dessiner les tuiles
      */
-    public void rendu(Graphics2D contexte) {
-        // Parcours de chaque ligne de la carte
-        for (int i = 0; i < decor.length; i++) {
-            // Parcours de chaque colonne de la ligne courante
-            for (int j = 0; j < decor[i].length; j++) {
+//    public void rendu(Graphics2D contexte, int x , int y) {
+//        // Parcours de chaque ligne de la carte
+//        for (int i = 0; i < decor.length; i++) {
+//            // Parcours de chaque colonne de la ligne courante
+//            for (int j = 0; j < decor[i].length; j++) {
+//
+//                int numeroTuile;
+//                 // Si hors limites on affiche une tuile de bordure (ici 0)
+//                if (i < 0 || i >= decor.length || j < 0 || j >= decor[0].length) {
+//                    numeroTuile = 0; // ← change cet index selon la tuile voulue
+//                } 
+//                else {
+//                // Récupération de l'index de la tuile à dessiner
+//                numeroTuile = decor[i][j];
+//                }
+//                // On introduit un facteur x pour effectuer un zoom sur la map 
+//                int zoom = 3 ;
+//                // Dessin de la tuile à la position (j*32, i*32) en pixels avec zoom
+//                // S'assure que l'on dessine une tuile qui existe
+//                if (numeroTuile >= 0 && numeroTuile < tuiles.length) {
+//                    contexte.drawImage(tuiles[numeroTuile], zoom*tailleTuile * (j-x+10), zoom*tailleTuile * (i-y+5),tailleTuile*zoom, tailleTuile*zoom ,null);
+//                }
+//            }
+//        }
+//    }
+    public void rendu(Graphics2D contexte, int x, int y) {
+    for (int i = 0; i < decor.length; i++) {
+        for (int j = 0; j < decor[i].length; j++) {
 
-                // Récupération de l'index de la tuile à dessiner
-                int numeroTuile = decor[i][j];
+            int numeroTuile = decor[i][j];
 
-                // Dessin de la tuile à la position (j*32, i*32) en pixels
-                // S'assure que l'on dessine une tuile qui existe
-                if (numeroTuile >= 0 && numeroTuile < tuiles.length) {
-                    contexte.drawImage(tuiles[numeroTuile], tailleTuile * j, tailleTuile * i, null);
-                }
+            // -1 (ou la valeur que tu choisis) = case transparente, on saute
+            if (numeroTuile < 0) continue;
+
+            int zoom = 1;
+            if (numeroTuile < tuiles.length) {
+                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + 10),zoom * tailleTuile * (i - y + 5),tailleTuile * zoom,tailleTuile * zoom,null);
             }
         }
     }
+}
 }
  
