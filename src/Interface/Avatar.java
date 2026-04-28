@@ -41,4 +41,8 @@ public class Avatar {
     public Coordinates getCoordinates() {
         return Coordinates;
     }
+
+    public void miseAJour() {}
+
+    public void rendu(java.awt.Graphics2D contexte) {}
 }

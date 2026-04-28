@@ -9,8 +9,9 @@ package Interface;
  * @author cpoussie
  */
 public class Salle_d_attente extends javax.swing.JFrame {
-    
+
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Salle_d_attente.class.getName());
+    private int nb = 0;
 
     /**
      * Creates new form Salle_d_attente
@@ -81,11 +82,11 @@ public class Salle_d_attente extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextField1ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        if nb == 4;
+        if (nb == 4) {
             Character salle = new Character();
             salle.setVisible(true);
             this.dispose();
-            // TODO add your handling code here:
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**

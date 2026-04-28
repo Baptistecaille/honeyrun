@@ -14,4 +14,8 @@ public class Monsters {
     public Monsters getMonsters() {
         return monsters;
     }
+
+    public void miseAJour() {}
+
+    public void rendu(java.awt.Graphics2D contexte) {}
 }

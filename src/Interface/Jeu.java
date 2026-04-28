@@ -20,12 +20,12 @@ public class Jeu {
 
     public Jeu(String pseudo) {
         this.map = new Map();
-        this.monsters = new Monsters(Avatar);
+        this.monsters = new Monsters();
         this.joueurs = new ArrayList<>();
-        Player joueurLocal = new Player(Avatar, Spawn, Name);
+        Player joueurLocal = new Player();
         joueurLocal.setId(0);
         this.joueurs.add(joueurLocal);
-        this.avatar = new Avatar(Coordinates, Image, Speed, Hitbox);
+        this.avatar = new Avatar(null, null, null, null);
     }
 
     public void setServeurTCP(ServeurTCP serveurTCP) {
