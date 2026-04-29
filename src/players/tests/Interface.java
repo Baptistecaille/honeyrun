@@ -35,15 +35,16 @@ public class Interface {
 		final int windowHeight = 600;
 
 		// Demander le pseudo avant de lancer le jeu
+		// Lancement d'une interface pour demander le pseudo du joueur
 		String pseudo = JOptionPane.showInputDialog(null, "Entrez votre pseudo :", "HoneyRun", JOptionPane.PLAIN_MESSAGE);
 		if (pseudo == null || pseudo.trim().isEmpty()) {
 			return;
 		}
-		pseudo = pseudo.trim();
+		pseudo = pseudo.trim(); // Nettoyer les espaces superflus du pseudo
 
 		// Connexion et attribution d'un avatar/spawn via la DB
 		GestionnaireJoueurs gestionnaire = new GestionnaireJoueurs();
-		DonneesJoueur moi = gestionnaire.connecter(pseudo);
+		DonneesJoueur moi = gestionnaire.connecter(pseudo); // On affecte moi a la réponse de la BDD.
 		if (moi == null) {
 			return; // Partie pleine
 		}
