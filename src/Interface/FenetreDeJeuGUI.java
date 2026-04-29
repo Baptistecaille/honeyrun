@@ -109,7 +109,8 @@ public class FenetreDeJeuGUI extends javax.swing.JFrame implements ActionListene
     }// </editor-fold>//GEN-END:initComponents
 
     private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
-        if (evt.getKeyCode() == evt.VK_UP) {
+       /*
+            if (evt.getKeyCode() == evt.VK_UP) {
             this.jeu.getAvatar().setToucheHaut(true);
         }
         if (evt.getKeyCode() == evt.VK_DOWN) {
@@ -120,8 +121,7 @@ public class FenetreDeJeuGUI extends javax.swing.JFrame implements ActionListene
         }
         if (evt.getKeyCode() == evt.VK_LEFT) {
             this.jeu.getAvatar().setToucheGauche(true);
-        }
-    }//GEN-LAST:event_formKeyPressed
+        } */    }//GEN-LAST:event_formKeyPressed
 
     private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
         
