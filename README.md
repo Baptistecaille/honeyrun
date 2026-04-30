@@ -102,13 +102,6 @@ mvn exec:java -Dexec.mainClass="players.tests.Interface"
 - [ ] Taille de hitbox variable
 - [ ] Couleurs distinctes par type de monstre
 
-### Commande à exectuer pour les tests
+### Fichier à lancer pour executer le jeu
 
-```bash
-# Lancer le serveur de test
-mvn exec:java -Dexec.mainClass="reseau.tests.ServeurMain"  ```
-
-```bash
-# Lancer le client de test
-javac -d /tmp/honeyrun_check src/reseau/tests/ClientConnexionTest.java && java -cp /tmp/honeyrun_check reseau.tests.ClientConnexionTest
-```
+Lancez ``` Interface.java ``` dans players/tests
