@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public final class ClientMain {
 
     private static final int JOUEUR_ID = 1;
-    private static final String HOST_PAR_DEFAUT = "127.0.0.1";
+    private static final String HOST_PAR_DEFAUT = "172.16.20.209";
 
     private ClientMain() {
     }

@@ -1,38 +1,42 @@
 package TileMapping;
 
+import Avatar.Player;
 import java.awt.Graphics2D;
+import Tools.Coordinates ;
+import Tools.Avatar;
+import Tools.Hitbox;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 
 /**
  * Exemple de classe jeu
  *
  * @author guillaume.laurent
  */
-//public class Jeu {
-//
-//    private Carte carte;
-//     
-//    public Jeu() {        
-//        this.carte = new Carte("src/TileMapping/Calque1920.txt");
-//    }
-//
-//    public void miseAJour() {
-//        this.carte.miseAJour();
-//    }
-//
-//    public void rendu(Graphics2D contexte) {
-//        this.carte.rendu(contexte, 5 , 0);
-//    }
-//
-//}
 public class Jeu {
     private Carte calque1;
     private Carte calque2;
     private Carte calque3;
+    private Avatar avatar1;
      
     public Jeu() {        
         this.calque1 = new Carte("src/TileMapping/Calque1920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque21920.txt");
         this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
+        BufferedImage sprite =  null;
+        try {
+            sprite = ImageIO.read(getClass().getResource("/resources/mantereligieuse.png"));
+            //sprite=redimensionner(sprite,70,70);
+        } catch (IOException ex) {
+            Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Coordinates position=new Coordinates(0,0);
+        Coordinates spawn = new Coordinates (80,60);
+        Hitbox hitbox1 = new Hitbox(position, 32, 32) ;
+        this.avatar1=new Avatar(position, hitbox1 ,sprite , 10);
     }
 
     public void miseAJour() {
@@ -40,10 +44,14 @@ public class Jeu {
         this.calque2.miseAJour();
         this.calque3.miseAJour();
     }
+
     
-    int Xp = 5;
-    int Yp = 5;
     public void rendu(Graphics2D contexte) {
+        int n = 32 ;
+        double a = this.avatar1.getPosition().getX();
+        double b = this.avatar1.getPosition().getY();
+        int Xp = (int) (a / (double) n) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient 
+        int Yp = (int)(b / (double) n) ;
         this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
         this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
         this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
