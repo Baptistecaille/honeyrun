@@ -158,7 +158,7 @@ public class Player {
     
 
     public void rendu(Graphics2D contexte) {
-        contexte.drawImage(this.avatar.getImage(), (int) this.avatar.getPosition().getX(), (int)this.avatar.getPosition().getY(), null);
+        contexte.drawImage(this.avatar.getImage(), 960, 544 , null);
     }
 
     public Avatar getAvatar() {
