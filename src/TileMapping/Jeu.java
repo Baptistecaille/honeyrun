@@ -37,6 +37,7 @@ public class Jeu {
         Coordinates spawn = new Coordinates (80,60);
         Hitbox hitbox1 = new Hitbox(position, 32, 32) ;
         this.avatar1=new Avatar(position, hitbox1 ,sprite , 10);
+        
     }
 
     public void miseAJour() {
