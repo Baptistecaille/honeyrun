@@ -26,17 +26,7 @@ public class Jeu {
         this.calque1 = new Carte("src/TileMapping/Calque1920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque21920.txt");
         this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
-        BufferedImage sprite =  null;
-        try {
-            sprite = ImageIO.read(getClass().getResource("/resources/mantereligieuse.png"));
-            //sprite=redimensionner(sprite,70,70);
-        } catch (IOException ex) {
-            Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        Coordinates position=new Coordinates(0,0);
-        Coordinates spawn = new Coordinates (80,60);
-        Hitbox hitbox1 = new Hitbox(position, 32, 32) ;
-        this.avatar1=new Avatar(position, hitbox1 ,sprite , 10);
+        
         
     }
 

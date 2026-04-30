@@ -24,6 +24,9 @@ public class Jeu {
     protected int score;
     protected Player player;
     private Carte carte;
+    private Carte calque1;
+    private Carte calque2;
+    private Carte calque3;
     
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
     // On crée une nouvelle image avec la transparence (TYPE_INT_ARGB)
@@ -42,6 +45,10 @@ public class Jeu {
   
 
     public Jeu(){
+        
+        this.calque1 = new Carte("src/TileMapping/Calque1920.txt");
+        this.calque2 = new Carte("src/TileMapping/Calque21920.txt");
+        this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
 //        try{
 //            this.decor = ImageIO.read(getClass().getResource("/resources/fondblanc.png"));
 //        }catch(IOException ex){
@@ -51,7 +58,7 @@ public class Jeu {
         BufferedImage sprite =  null;
         try {
             sprite = ImageIO.read(getClass().getResource("/resources/mantereligieuse.png"));
-            //sprite=redimensionner(sprite,70,70);
+            sprite=redimensionner(sprite,96,96);
         } catch (IOException ex) {
             Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -60,14 +67,21 @@ public class Jeu {
         Avatar avatar=new Avatar(position, sprite , 10);
         Player P1= new Player(avatar,spawn,null);
         this.player=P1;
-        this.carte = new Carte("src/TileMapping/Calque1920.txt");
+        
         
     }
     
     public void rendu(Graphics2D contexte){
-        contexte.drawImage(this.decor,0,0,null);
-        contexte.drawString("Score : " + score,10 ,20);
-        this.carte.rendu(contexte,2 ,10); //pour avoir le fond
+        
+        //contexte.drawString("Score : " + score,10 ,20);
+        int n = 32 ;
+        double a = this.player.getAvatar().getPosition().getX();
+        double b = this.player.getAvatar().getPosition().getY();
+        int Xp = (int) (a / (double) n) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient 
+        int Yp = (int)(b / (double) n) ;
+        this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
+        this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
+        this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
                                     //1.Rendu du décor 
         //2.Rendu des sprites
         this.player.rendu(contexte);
@@ -78,7 +92,9 @@ public class Jeu {
         //2.Mise à jour des autres éléments (miel, monstres, etc.)
         //3. Gérer les intéractions (collisions et autres règles)
         this.player.miseAJour();
-        this.carte.miseAJour(); // pour avoir le fond
+        this.calque1.miseAJour();
+        this.calque2.miseAJour();
+        this.calque3.miseAJour();// pour avoir le fond
     }
         
 

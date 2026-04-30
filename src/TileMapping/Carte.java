@@ -156,7 +156,7 @@ public class Carte {
             int offsetY = 5;
             
             if (numeroTuile < tuiles.length) { // on dessine notre tuile
-                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - offsetY + 5),tailleTuile * zoom,tailleTuile * zoom,null);
+                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - y + offsetY + 5),tailleTuile * zoom,tailleTuile * zoom,null);
             }
         }
     }

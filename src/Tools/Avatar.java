@@ -12,11 +12,19 @@ public class Avatar {
     private double speed;
 
     // Constructor
-    public Avatar(Coordinates position, Hitbox hitbox, BufferedImage image, double speed) {
+    public Avatar(Coordinates position, BufferedImage image, double speed) {
         this.position = position;
-        this.hitbox = hitbox;
         this.image = image;
+        this.hitbox = new Hitbox( this.position, this.image.getTileWidth(), this.image.getHeight());
         this.speed = speed;
+    }
+
+    public BufferedImage getImage() {
+        return image;
+    }
+
+    public double getSpeed() {
+        return speed;
     }
 
     // Getters and setters

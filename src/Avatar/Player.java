@@ -80,6 +80,46 @@ public class Player {
         
     }
 
+    public boolean isToucheGauche() {
+        return toucheGauche;
+    }
+
+    public boolean isToucheDroite() {
+        return toucheDroite;
+    }
+
+    public boolean isToucheHaut() {
+        return toucheHaut;
+    }
+
+    public boolean isToucheBas() {
+        return toucheBas;
+    }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public boolean isHasHoney() {
+        return hasHoney;
+    }
+
+    public boolean isIsHarvesting() {
+        return isHarvesting;
+    }
+
+    public long getHarvestStartTime() {
+        return harvestStartTime;
+    }
+
+    public boolean isHasWin() {
+        return hasWin;
+    }
+
+    public boolean isHasLost() {
+        return hasLost;
+    }
+
     public void miseAJour() {
         if (this.toucheGauche){
             double x = this.avatar.getPosition().getX();
