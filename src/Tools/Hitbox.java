@@ -1,4 +1,4 @@
-package monsters;
+package Tools;
 
 public class Hitbox {
     

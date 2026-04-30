@@ -7,8 +7,8 @@ import java.awt.Graphics;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import monsters.Coordinates;
-import monsters.Hitbox;
+import Tools.Coordinates;
+import Tools.Hitbox;
 import monsters.Monsters;
 
 public class Interface {
