@@ -4,120 +4,142 @@
  */
 package Interface;
 
+
+
 import java.awt.Image;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
-/**
- *
- * @author cpoussie
- */
-
 public class Skin extends javax.swing.JFrame {
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Skin.class.getName());
 
-    /**
-     * Creates new form Character
-     */
-    public boolean isSkinAvailable(String skinName) {
-    try {
-        Connection connexion = DriverManager.getConnection(
-            "jdbc:mariadb://nemrod.caca.fr:3306/caca",
-            "nom",
-            "MotDePasse"
-        );
+    private final PlayerSQL player;
 
-        PreparedStatement requete = connexion.prepareStatement(
-            "SELECT available FROM skins WHERE name = ?"
-        );
-        requete.setString(1, skinName);
-
-        ResultSet rs = requete.executeQuery();
-
-        if (rs.next()) {
-            boolean dispo = rs.getBoolean("available");
-            rs.close();
-            requete.close();
-            connexion.close();
-            return dispo;
-        }
-
-        rs.close();
-        requete.close();
-        connexion.close();
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-
-    return false; // si erreur → on considère indisponible
-}
-    private void setButtonImage(javax.swing.JButton button, String resourcePath) {
-    java.net.URL imgURL = getClass().getResource(resourcePath);
-    if (imgURL == null) {
-        System.err.println("Image not found: " + resourcePath);
-        System.out.println("Loading: " + resourcePath + " -> " + getClass().getResource(resourcePath));
-
-        return;
-    }
-
-    ImageIcon icon = new ImageIcon(imgURL);
-    Image scaled = icon.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH);
-    button.setIcon(new ImageIcon(scaled));
-    button.setText(""); // enlève le texte
-}
-    private void loadSkinButtons() {
-    setButtonImage(jButton1, "/Interface/Characters/Mante Religieuse Vicieuse.png");
-
-    
-    setButtonImage(jButton2, "/Interface/Characters/Criquet Suspect.png");
-
-    
-    setButtonImage(jButton3, "/Interface/Characters/Araignee Sans Pitie.png");
-
-    
-    setButtonImage(jButton4, "/Interface/Characters/Scarabee Mal Fame.png");
-    
-    setButtonImage(jButton5, "/Interface/Characters/Abeille Cruelle.png");
-
-    }
-    
-    private void setupListeners() {
-    jButton1.addActionListener(e -> selectSkin("Mante Religieuse Vicieuse"));
-    jButton2.addActionListener(e -> selectSkin("Criquet Suspect"));
-    jButton3.addActionListener(e -> selectSkin("Araignee Sans Pitie"));
-    jButton4.addActionListener(e -> selectSkin("Scarabee Mal Fame"));
-    jButton5.addActionListener(e -> selectSkin("Abeille Cruelle"));
-}
-    private void selectSkin(String skinName) {
-    JOptionPane.showMessageDialog(this, "You selected: " + skinName);
-
-    // Ici tu peux stocker le skin dans ton joueur
-    // Exemple :
-    // Player.currentPlayer.setSkin(skinName);
-
-    dispose(); // ferme la fenêtre
-}
-    private void checkAvailability() {
-    jButton1.setEnabled(isSkinAvailable("Mante Religieuse Vicieuse"));
-    jButton2.setEnabled(isSkinAvailable("Criquet Suspect"));
-    jButton3.setEnabled(isSkinAvailable("Araignee Sans Pitie"));
-    jButton4.setEnabled(isSkinAvailable("Scarabee Mal Fame"));
-}
-
-    
-    public Skin() {
+    public Skin(PlayerSQL player) {
+        this.player = player;
         initComponents();
+        setLocationRelativeTo(null);
+
         loadSkinButtons();
         checkAvailability();
         setupListeners();
     }
+
+    // -----------------------------
+    // 1. Vérifier si un skin est libre
+    // -----------------------------
+    private boolean isSkinAvailable(String skinName) {
+        try {
+            Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP"
+            );
+
+            PreparedStatement requete = connexion.prepareStatement(
+                "SELECT available FROM skins WHERE name = ?"
+            );
+            requete.setString(1, skinName);
+
+            ResultSet rs = requete.executeQuery();
+
+            if (rs.next()) {
+                boolean dispo = rs.getBoolean("available");
+                rs.close();
+                requete.close();
+                connexion.close();
+                return dispo;
+            }
+
+            rs.close();
+            requete.close();
+            connexion.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    // -----------------------------
+    // 2. Charger les images des boutons
+    // -----------------------------
+    private void setButtonImage(javax.swing.JButton button, String resourcePath) {
+        java.net.URL imgURL = getClass().getResource(resourcePath);
+        if (imgURL == null) {
+            System.err.println("Image not found: " + resourcePath);
+            return;
+        }
+
+        ImageIcon icon = new ImageIcon(imgURL);
+        Image scaled = icon.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+        button.setIcon(new ImageIcon(scaled));
+        button.setText("");
+    }
+
+    private void loadSkinButtons() {
+        setButtonImage(jButton1, "/resources/Mantereligieuse.png");
+        setButtonImage(jButton2, "/resources/Criquet.png");
+        setButtonImage(jButton3, "/resources/Araignee.png");
+        setButtonImage(jButton4, "/resources/Scarabee.png");
+        setButtonImage(jButton5, "/resources/Abeille.png");
+    }
+
+    // -----------------------------
+    // 3. Désactiver les skins pris
+    // -----------------------------
+    private void checkAvailability() {
+        jButton1.setEnabled(isSkinAvailable("Mante Religieuse Vicieuse"));
+        jButton2.setEnabled(isSkinAvailable("Criquet Suspect"));
+        jButton3.setEnabled(isSkinAvailable("Araignee Sans Pitie"));
+        jButton4.setEnabled(isSkinAvailable("Scarabee Mal Fame"));
+        jButton5.setEnabled(isSkinAvailable("Abeille Cruelle"));
+    }
+
+    // -----------------------------
+    // 4. Actions des boutons
+    // -----------------------------
+    private void setupListeners() {
+        jButton1.addActionListener(e -> selectSkin("Mante Religieuse Vicieuse"));
+        jButton2.addActionListener(e -> selectSkin("Criquet Suspect"));
+        jButton3.addActionListener(e -> selectSkin("Araignee Sans Pitie"));
+        jButton4.addActionListener(e -> selectSkin("Scarabee Mal Fame"));
+        jButton5.addActionListener(e -> selectSkin("Abeille Cruelle"));
+    }
+
+    private void selectSkin(String skinName) {
+        JOptionPane.showMessageDialog(this, "Tu as choisi : " + skinName);
+
+        try {
+            Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP"
+            );
+
+            // Marquer le skin comme pris
+            PreparedStatement update = connexion.prepareStatement(
+                "UPDATE skins SET available = 0 WHERE name = ?"
+            );
+            update.setString(1, skinName);
+            update.executeUpdate();
+
+            connexion.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Ouvrir la salle d'attente
+        new Lobby(player).setVisible(true);
+        dispose();
+    }
+
+    // -----------------------------
+    // 5. Interface générée par NetBeans
+    // -----------------------------
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -201,6 +223,7 @@ public class Skin extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
+   
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -215,12 +238,12 @@ public class Skin extends javax.swing.JFrame {
                 }
             }
         } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
+
         }
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Skin().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new Accueil().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

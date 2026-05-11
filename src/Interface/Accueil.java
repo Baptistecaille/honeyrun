@@ -9,6 +9,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.swing.JOptionPane;
 
 /**
@@ -50,6 +51,12 @@ public class Accueil extends javax.swing.JFrame {
         jLabel2.setText("Connectez-vous à l'application....");
 
         jLabel3.setText("Pseudo");
+
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
 
         jButton1.setText("Entrer");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -112,26 +119,51 @@ public class Accueil extends javax.swing.JFrame {
             Connection connexion = DriverManager.getConnection(
                 "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
                 "etudiant",
-                "YTDTvj9TR3CDYCmP");
-                    
-            String sql = "INSERT INTO joueur (nom, spawnx, spawny, ) VALUES (?)";
-            PreparedStatement stmt = connexion.prepareStatement(sql);
-            stmt.setString(1, nom);
-            stmt.executeUpdate();
+                "YTDTvj9TR3CDYCmP"
+        );
 
+        PreparedStatement find = connexion.prepareStatement(
+            "SELECT id FROM joueur WHERE nom IS NULL LIMIT 1"
+        );
+        ResultSet rs = find.executeQuery();
+
+        if (!rs.next()) {
+            JOptionPane.showMessageDialog(this, "La partie est déjà pleine !");
             connexion.close();
-            
-            
-            Salle_d_attente salle = new Salle_d_attente();
-            salle.setVisible(true);
-            this.dispose();
+            return;
+        }
 
+        int playerId = rs.getInt("id");
+
+        // 2️⃣ Assigner le pseudo à cette ligne
+        PreparedStatement update = connexion.prepareStatement("UPDATE joueur SET nom = ? WHERE id = ?");
+        update.setString(1, nom);
+        update.setInt(2, playerId);
+        update.executeUpdate();
+
+        connexion.close();
+        
+
+        // Créer un PlayerSQL pour le passer à Skin
+        PlayerSQL p = new PlayerSQL(playerId, nom, null);
+
+        // Ouvrir la fenêtre de choix du skin
+        Skin skin = new Skin(p);
+        skin.setVisible(true);
+        this.dispose();
+            
         } catch (Exception e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Erreur SQL : " + e.getMessage());
+    
         }
 
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField2ActionPerformed
 
 
     public static void main(String args[]) {
