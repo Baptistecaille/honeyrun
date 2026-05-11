@@ -104,45 +104,33 @@ public class Player extends Avatar {
         if (this.toucheGauche){
             double x = this.getPosition().getX();
             x-= (1*this.speed * dt);
-            synchronized (position){
-                position.setX(x);}
+            this.position.setX(x);
         }
         if (this.toucheDroite){
             double x = this.getPosition().getX();
             x+= (1*this.speed * dt);
-            synchronized (position){
-                position.setX(x);}
+            this.position.setX(x);
         }
         if (this.toucheBas){
             double y = this.getPosition().getY();
             y+= (1*this.speed * dt);
-            synchronized (position){
-                position.setY(y);}
+            this.position.setY(y);
         }
         if (this.toucheHaut){
             double y = this.getPosition().getY();
             y-= (1*this.speed*dt);
-            synchronized (position){
-                position.setY(y);}
         }
         if (this.getPosition().getX()> 1920 - this.getImage().getWidth()){// collision avec le bord droit de la scene
-            synchronized (position){
-                position.setX( 1920 - this.getImage().getWidth());
-            }
+            this.position.setX( 1920 - this.getImage().getWidth());
         }
         if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
-            synchronized (position){
-                position.setX(0);}
+            this.position.setX(0);
         }   
         if(this.getPosition().getY()> 1088 - this.getImage().getHeight()){  // collision avec le bord bas de la scene
-            synchronized (position){
-                position.setY(1088 - this.getImage().getHeight());}
-           
+            this.position.setY(1088 - this.getImage().getHeight());
         }
         if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
-            synchronized (position){
-                position.setY(0);}
-                
+            this.position.setY(0); 
         }
         System.out.println("X: " + getX());
         

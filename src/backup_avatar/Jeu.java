@@ -80,7 +80,7 @@ public class Jeu {
         int Yp = (int)(b / (double) n) ;
         this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
         this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
-        this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
+        //this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
                                     //1.Rendu du décor 
         //2.Rendu des sprites
         this.player.rendu(contexte);
@@ -93,7 +93,7 @@ public class Jeu {
         this.player.miseAJour();
         this.calque1.miseAJour();
         this.calque2.miseAJour();
-        this.calque3.miseAJour();// pour avoir le fond
+        //this.calque3.miseAJour();// pour avoir le fond
     }
         
 

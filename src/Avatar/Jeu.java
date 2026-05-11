@@ -43,9 +43,9 @@ public class Jeu {
     }
 
     public Jeu() {
-        this.calque1 = new Carte("src/TileMapping/Calque1920.txt");
-        this.calque2 = new Carte("src/TileMapping/Calque21920.txt");
-        this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
+        this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
+        this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
+        //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
         this.score = 0;
 
         BufferedImage sprite = null;
@@ -71,7 +71,7 @@ public class Jeu {
         int Yp = (int)(b / (double) n) ;
         this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
         this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
-        this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
+        //this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
                                     //1.Rendu du décor 
         //2.Rendu des sprites
         this.player.rendu(contexte);
@@ -82,7 +82,7 @@ public class Jeu {
         // Le mouvement du joueur est géré par son thread interne (startMovement)
         this.calque1.miseAJour();
         this.calque2.miseAJour();
-        this.calque3.miseAJour();
+        //this.calque3.miseAJour();
     }
 
     public Player getPlayer() {
