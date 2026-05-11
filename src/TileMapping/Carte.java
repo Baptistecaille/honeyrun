@@ -155,12 +155,29 @@ public class Carte {
             int offsetX = 10;
             int offsetY = 5;
             
+            
             if (numeroTuile < tuiles.length) { // on dessine notre tuile
                 contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - y + offsetY ),tailleTuile * zoom,tailleTuile * zoom,null);
             }
         }
     }
   }
+//Méthode pour savoir si on a une collision ou non 
+//    public prochainetuileaccessible (double x, double y){
+//        int Col = 1;
+//        int n = 32 ;
+//        int Xc = (int)Math.ceil(x/(double)n) ;
+//        int Yc = (int)Math.ceil(y/(double)n) ;
+//        if (decor[Xc][Yc] == 79){
+//            Col = -1 ;
+//        }
+//        else {
+//            Col = 1 ;
+//        }    
+//        
+//        
+//        
+//    }
 }
 
  
