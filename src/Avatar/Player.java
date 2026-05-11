@@ -1,229 +1,230 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Avatar;
 
-import Tools.Avatar;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import Tools.Coordinates;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
+import Tools.Hitbox;
 
-/**
- *
- * @author alamas
- */
+public class Player extends Avatar {
 
+    private final String name;
+    private final Coordinates spawn;
 
-public class Player {
-    
-    //protected BufferedImage sprite;//une image ou une animation bidimensionnelle intégrée dans une scène ou un environnement de jeu plus vaste
-    private Avatar avatar;
-    private Coordinates spawn;
-    private boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
-    private int score;
-    private String name;
-    private int lives;            // vies du joueur 
-    private boolean hasHoney ;   // le joeur possède ou non du miel
-    private boolean isHarvesting ; // le joueur est-il entrain de collecter du miel ?
-    private long harvestStartTime ;// Timestamp when harvesting started (in milliseconds since epoch)
-    private boolean hasWin; // le joueur a-t-il gagné?
-    private boolean hasLost; // le joueur a-t-il encore des vies ?
+    private volatile int lives = 3;
+    private volatile boolean hasHoney = false;
+    private volatile boolean isHarvesting = false;
+    private volatile long harvestStartTime = 0;
 
-//    private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
-//    // On crée une nouvelle image avec la transparence (TYPE_INT_ARGB)
-//    BufferedImage nouvelleImage = new BufferedImage(largeur, hauteur, BufferedImage.TYPE_INT_ARGB);
-//    Graphics2D g2d = nouvelleImage.createGraphics();
-//    
-//    // On active le lissage pour une meilleure qualité
-//    g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, 
-//                         java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-//    
-//    // On dessine l'ancienne image dans la nouvelle
-//    g2d.drawImage(img, 0, 0, largeur, hauteur, null);
-//    g2d.dispose();
-    
-//    return nouvelleImage;
-//}
-//    
-    public Player(Avatar avatar, Coordinates spawn, String name) {
-//        try {
-//            this.sprite = ImageIO.read(getClass().getResource("/resources/bee.png"));
-//            this.sprite=redimensionner(this.sprite,70,70);
-//        } catch (IOException ex) {
-//            Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-        this.avatar=avatar;
-        this.name=name;
-        this.spawn=spawn;
-        this.avatar.getPosition().setX(this.spawn.getX());
-        this.avatar.getPosition().setY(this.spawn.getY());
-        this.score=0;
-        this.toucheGauche = false; 
-        this.toucheDroite = false;
-        this.toucheBas = false;
-        this.toucheHaut=false;
-        this.lives=3;
-        this.hasHoney=false;
-        this.isHarvesting=false;
-        this.hasWin=false;
-        this.hasLost=false;
-        
-    }
+    private final Hitbox hiveZone, spawnZone;
+    private final ArrayList<Monsters> monsters;
 
-    public boolean isToucheGauche() {
-        return toucheGauche;
-    }
+    private final Set<Integer> keysPressed = Collections.synchronizedSet(new HashSet<>()); 
 
-    public boolean isToucheDroite() {
-        return toucheDroite;
-    }
+    private double minX = 0.0; // Set bounderies for the player not to move outside the window or play area.
+    private double minY = 0.0;
+    private double maxX = Double.POSITIVE_INFINITY;
+    private double maxY = Double.POSITIVE_INFINITY;
 
-    public boolean isToucheHaut() {
-        return toucheHaut;
-    }
+    private volatile boolean running = false;
+    private Thread movementThread;
 
-    public boolean isToucheBas() {
-        return toucheBas;
-    }
+    private volatile long invincibleUntil = 0;
+    private volatile boolean won = false;
+    private volatile boolean gameOver = false;
 
-    public int getLives() {
-        return lives;
-    }
-
-    public boolean isHasHoney() {
-        return hasHoney;
-    }
-
-    public boolean isIsHarvesting() {
-        return isHarvesting;
-    }
-
-    public long getHarvestStartTime() {
-        return harvestStartTime;
-    }
-
-    public boolean isHasWin() {
-        return hasWin;
-    }
-
-    public boolean isHasLost() {
-        return hasLost;
-    }
-
-    public void miseAJour() {
-        if (this.toucheGauche){
-            double x = this.avatar.getPosition().getX();
-            x-= 5;
-            this.avatar.getPosition().setX(x);
-        }
-        if (this.toucheDroite){
-            double x = this.avatar.getPosition().getX();
-            x+= 5;
-            this.avatar.getPosition().setX(x);
-        }
-        if (this.toucheBas){
-            double y = this.avatar.getPosition().getY();
-            y+= 5;
-            this.avatar.getPosition().setY(y);
-        }
-        if (this.toucheHaut){
-            double y = this.avatar.getPosition().getY();
-            y-= 5;
-            this.avatar.getPosition().setY(y);
-        }
-        if (this.avatar.getPosition().getX()> 1920 - this.avatar.getImage().getWidth()){// collision avec le bord droit de la scene
-            this.avatar.getPosition().setX( 1920 - this.avatar.getImage().getWidth());
-        }
-        if (this.avatar.getPosition().getX()<0){// collision avec le bord gauche de la scene
-           this.avatar.getPosition().setX(0);
-        }   
-        if(this.avatar.getPosition().getY()> 1088 - this.avatar.getImage().getHeight()){  // collision avec le bord bas de la scene
-           this.avatar.getPosition().setY(1088 - this.avatar.getImage().getHeight());
-        }
-        if (this.avatar.getPosition().getY()<0){// collision avec le bord haut de la scene
-            this.avatar.getPosition().setY(0);
-        }
-        }
-        
-    
-
-    public void rendu(Graphics2D contexte) {
-        contexte.drawImage(this.avatar.getImage(), 960, 544 , null);
-    }
-
-    public Avatar getAvatar() {
-        return avatar;
-    }
-
-    public void setAvatar(Avatar avatar) {
-        this.avatar = avatar;
-    }
-
-    public void setSpawn(Coordinates spawn) {
-        this.spawn = spawn;
-    }
-
-    public void setScore(int score) {
-        this.score = score;
-    }
-
-    public void setName(String name) {
+    public Player(
+        double spawnX,
+        double spawnY,
+        double speed,
+        Hitbox hitbox,
+        Hitbox hiveZone,
+        Hitbox spawnZone,
+        ArrayList<Monsters> monsters,
+        String name
+    ) {
+        super(new Coordinates(spawnX, spawnY), null, speed, hitbox);
+        this.spawn = new Coordinates(spawnX, spawnY);
         this.name = name;
-    }
-    
-    
+        this.hiveZone = hiveZone;
+        this.spawnZone = spawnZone;
+        this.monsters = monsters != null ? monsters : new ArrayList<>();
 
-    public Coordinates getSpawn() {
-        return spawn;
-    }
-
-    public int getScore() {
-        return score;
+        if (this.hitbox != null) {
+            this.hitbox.update(this.position);
+        }
     }
 
-    public String getName() {
-        return name;
-    }
-    
-    
-    
+    @Override
+    public void startMovement() {
+        if (running) return;
+        running = true;
 
+        movementThread = new Thread(() -> {
+            long lastTime = System.currentTimeMillis();
 
-    
-//    public double getLargeur() {
-//        return sprite.getHeight();
-//    }
-//
-//    public double getHauteur() {
-//        return sprite.getWidth();
-//    }
-    
-    public void setToucheDroite(boolean etat){
-        this.toucheDroite = etat;
+            while (running) {
+                long now = System.currentTimeMillis();
+                double dt = (now - lastTime) / 1000.0;
+                lastTime = now;
+
+                updatePosition(dt);
+                syncHitbox();
+                updateHarvesting(now);
+                handleMonsterCollisions(now);
+                checkWinCondition();
+
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
+            }
+        }, "player-movement");
+
+        movementThread.start();
     }
 
-    
-    public void setToucheGauche(boolean etat){
-        this.toucheGauche = etat; 
+    @Override
+    public void stopMovement() {
+        running = false;
+        if (movementThread != null) {
+            movementThread.interrupt();
+        }
     }
-    
-    public void setToucheHaut(boolean etat){
-        this.toucheHaut = etat;
+
+    public void onKeyPressed(int keyCode) {
+        if (isMovementKey(keyCode)) keysPressed.add(keyCode);
     }
-    
-    public void setToucheBas(boolean etat){
-        this.toucheBas = etat;
+
+    public void onKeyReleased(int keyCode) {
+        if (isMovementKey(keyCode)) keysPressed.remove(keyCode);
     }
-    
-    
+
+    private boolean isMovementKey(int keyCode) {
+        return keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT
+            || keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN;
+    }
+
+    private void updatePosition(double dt) {
+        double dirX = 0.0;
+        double dirY = 0.0;
+
+        synchronized (keysPressed) {
+            if (keysPressed.contains(KeyEvent.VK_LEFT))  dirX -= 1.0;
+            if (keysPressed.contains(KeyEvent.VK_RIGHT)) dirX += 1.0;
+            if (keysPressed.contains(KeyEvent.VK_UP))    dirY -= 1.0;
+            if (keysPressed.contains(KeyEvent.VK_DOWN))  dirY += 1.0;
+        }
+
+        if (dirX != 0.0 || dirY != 0.0) {
+            double magnitude = Math.hypot(dirX, dirY);
+            dirX /= magnitude;
+            dirY /= magnitude;
+        }
+
+        synchronized (position) {
+            double newX = position.getX() + (dirX * speed * dt);
+            double newY = position.getY() + (dirY * speed * dt);
+            position.setX(clamp(newX, minX, maxX));
+            position.setY(clamp(newY, minY, maxY));
+        }
+    }
+
+    private void syncHitbox() {
+        if (hitbox == null) return;
+        synchronized (position) {
+            hitbox.update(position);
+        }
+    }
+
+    private void updateHarvesting(long now) {
+
+        if (overlaps(hitbox, hiveZone)) {
+            if (!isHarvesting) {
+                isHarvesting = true;
+                harvestStartTime = now;
+            } else if (now - harvestStartTime >= 3000) { // 3s to harvest
+                hasHoney = true;
+                isHarvesting = false;
+                harvestStartTime = 0;
+            }
+        } else {
+            isHarvesting = false;
+            harvestStartTime = 0;
+        }
+    }
+
+    private void handleMonsterCollisions(long now) {
+
+        for (Monsters monster : monsters) {
+
+            if (overlaps(hitbox, monster.getHitbox())) {
+                lives = Math.max(0, lives - 1);
+                hasHoney = false;
+                isHarvesting = false;
+                harvestStartTime = 0;
+
+                synchronized (position) { // redirect to spawn when player is hit by a monster
+                    position.setX(spawn.getX());
+                    position.setY(spawn.getY());
+                }
+                syncHitbox();
+
+                invincibleUntil = now + 1000;
+
+                if (lives == 0) {
+                    gameOver = true;
+                    running = false;
+                }
+                break;
+            }
+        }
+    }
+
+    private void checkWinCondition() {
+
+        if (overlaps(hitbox, spawnZone)) {
+            hasHoney = false;
+            won = true;
+            running = false;
+        }
+    }
+
+    private boolean overlaps(Hitbox a, Hitbox b) {
+        return a.getX() < b.getX() + b.getWidth()
+            && a.getX() + a.getWidth() > b.getX()
+            && a.getY() < b.getY() + b.getHeight()
+            && a.getY() + a.getHeight() > b.getY();
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    public double getX() { synchronized (position) { return position.getX(); } }
+    public double getY() { synchronized (position) { return position.getY(); } }
+    public double getMaxSpeed() { return speed; }
+    public String getName() { return name; }
+    public Coordinates getSpawn() { return new Coordinates(spawn.getX(), spawn.getY()); }
+    public int getLives() { return lives; }
+    public boolean hasHoney() { return hasHoney; }
+    public boolean isHarvesting() { return isHarvesting; }
+    public long getHarvestStartTime() { return harvestStartTime; }
+    public long getInvincibleUntil() { return invincibleUntil; }
+    public boolean isRunning() { return running; }
+    public boolean isWon() { return won; }
+    public boolean isGameOver() { return gameOver; }
+
+    public void setMovementBounds(double minX, double minY, double maxX, double maxY) {
+        this.minX = minX;
+        this.minY = minY;
+        this.maxX = Math.max(minX, maxX);
+        this.maxY = Math.max(minY, maxY);
+
+        synchronized (position) {
+            position.setX(clamp(position.getX(), this.minX, this.maxX));
+            position.setY(clamp(position.getY(), this.minY, this.maxY));
+        }
+        syncHitbox();
+    }
 }

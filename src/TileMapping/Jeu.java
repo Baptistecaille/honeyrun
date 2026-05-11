@@ -3,7 +3,7 @@ package TileMapping;
 import Avatar.Player;
 import java.awt.Graphics2D;
 import Tools.Coordinates ;
-import Tools.Avatar;
+import Avatar.Avatar;
 import Tools.Hitbox;
 import java.awt.image.BufferedImage;
 import java.io.IOException;

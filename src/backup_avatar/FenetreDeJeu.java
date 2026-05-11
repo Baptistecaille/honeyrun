@@ -72,12 +72,37 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
     @Override
     public void keyPressed(KeyEvent evt) {
-        this.jeu.getPlayer().onKeyPressed(evt.getKeyCode());
+        if (evt.getKeyCode() == evt.VK_RIGHT){
+            this.jeu.getPlayer().setToucheDroite(true);
+        }
+        if (evt.getKeyCode()== evt.VK_LEFT){
+            this.jeu.getPlayer().setToucheGauche(true);
+        }
+        if (evt.getKeyCode() == evt.VK_DOWN){
+            this.jeu.getPlayer().setToucheBas(true);
+        }
+        if (evt.getKeyCode()== evt.VK_UP){
+            this.jeu.getPlayer().setToucheHaut(true);
+        }
+        
+        //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public void keyReleased(KeyEvent evt) {
-        this.jeu.getPlayer().onKeyReleased(evt.getKeyCode());
+        if (evt.getKeyCode() == evt.VK_RIGHT){
+            this.jeu.getPlayer().setToucheDroite(false);
+        }
+        if (evt.getKeyCode()== evt.VK_LEFT){
+            this.jeu.getPlayer().setToucheGauche(false);
+        }
+        if (evt.getKeyCode() == evt.VK_UP){
+            this.jeu.getPlayer().setToucheHaut(false);
+        }
+        if (evt.getKeyCode()== evt.VK_DOWN){
+            this.jeu.getPlayer().setToucheBas(false);
+        }
+        //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
     
     
