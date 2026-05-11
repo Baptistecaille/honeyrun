@@ -183,7 +183,7 @@ public class Player extends Avatar {
 
     private void checkWinCondition() {
 
-        if (overlaps(hitbox, spawnZone)) {
+        if (hasHoney && overlaps(hitbox, spawnZone)) {
             hasHoney = false;
             won = true;
             running = false;
