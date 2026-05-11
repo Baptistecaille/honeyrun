@@ -12,7 +12,7 @@ public class Monsters extends Avatar {
     private Coordinates heading;
     private Color color;
 
-    private double minX = 0.0;
+    private double minX = 0.0; // a revoir 
     private double minY = 0.0;
     private double maxX = Double.POSITIVE_INFINITY;
     private double maxY = Double.POSITIVE_INFINITY;
@@ -74,7 +74,7 @@ public class Monsters extends Avatar {
                     }
                 }
 
-                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
             }
         }, "monster-movement");
 
@@ -104,7 +104,7 @@ public class Monsters extends Avatar {
             { 1, 1}, { 1,-1}, {-1, 1}, {-1,-1}
         };
         int[] d = dirs[random.nextInt(dirs.length)];
-        double mag = Math.hypot(d[0], d[1]);
+        double mag = Math.hypot(d[0], d[1]); // should always be 1 or sqrt(2) hypot sum of squares
         velocity.setX((d[0] / mag) * speed);
         velocity.setY((d[1] / mag) * speed);
     }

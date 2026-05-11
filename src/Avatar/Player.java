@@ -77,7 +77,7 @@ public class Player extends Avatar {
                 handleMonsterCollisions(now);
                 checkWinCondition();
 
-                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
             }
         }, "player-movement");
 
@@ -138,17 +138,12 @@ public class Player extends Avatar {
     }
 
     private void updateHarvesting(long now) {
-        if (hasHoney || hitbox == null || hiveZone == null) {
-            isHarvesting = false;
-            harvestStartTime = 0;
-            return;
-        }
 
         if (overlaps(hitbox, hiveZone)) {
             if (!isHarvesting) {
                 isHarvesting = true;
                 harvestStartTime = now;
-            } else if (now - harvestStartTime >= 3000) {
+            } else if (now - harvestStartTime >= 3000) { // 3s to harvest
                 hasHoney = true;
                 isHarvesting = false;
                 harvestStartTime = 0;
@@ -160,10 +155,8 @@ public class Player extends Avatar {
     }
 
     private void handleMonsterCollisions(long now) {
-        if (hitbox == null || now <= invincibleUntil) return;
 
         for (Monsters monster : monsters) {
-            if (monster == null || monster.getHitbox() == null) continue;
 
             if (overlaps(hitbox, monster.getHitbox())) {
                 lives = Math.max(0, lives - 1);
@@ -171,7 +164,7 @@ public class Player extends Avatar {
                 isHarvesting = false;
                 harvestStartTime = 0;
 
-                synchronized (position) {
+                synchronized (position) { // redirect to spawn when player is hit by a monster
                     position.setX(spawn.getX());
                     position.setY(spawn.getY());
                 }
@@ -189,7 +182,6 @@ public class Player extends Avatar {
     }
 
     private void checkWinCondition() {
-        if (gameOver || !hasHoney || hitbox == null || spawnZone == null) return;
 
         if (overlaps(hitbox, spawnZone)) {
             hasHoney = false;
