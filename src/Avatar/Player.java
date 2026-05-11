@@ -218,51 +218,48 @@ public class Player extends Avatar {
 //    }
 
 
-<<<<<<< HEAD
-=======
-            if (overlaps(hitbox, monster.getHitbox())) {
-                lives = Math.max(0, lives - 1);
-                hasHoney = false;
-                isHarvesting = false;
-                harvestStartTime = 0;
 
-                synchronized (position) { // redirect to spawn when player is hit by a monster
-                    position.setX(spawn.getX());
-                    position.setY(spawn.getY());
-                }
-                syncHitbox();
+//            if (overlaps(hitbox, monster.getHitbox())) {
+//                lives = Math.max(0, lives - 1);
+//                hasHoney = false;
+//                isHarvesting = false;
+//                harvestStartTime = 0;
+//
+//                synchronized (position) { // redirect to spawn when player is hit by a monster
+//                    position.setX(spawn.getX());
+//                    position.setY(spawn.getY());
+//                }
+//                syncHitbox();
+//
+//                invincibleUntil = now + 1000;
+//
+//                if (lives == 0) {
+//                    gameOver = true;
+//                    running = false;
+//                }
+//                break;
+//            }
+//        }
+//    }
+//
+//    private void checkWinCondition() {
+//
+//        if (hasHoney && overlaps(hitbox, spawnZone)) {
+//            hasHoney = false;
+//            won = true;
+//            running = false;
+//        }
+//    }
+//
+//    private boolean overlaps(Hitbox a, Hitbox b) {
+//        return a.getX() < b.getX() + b.getWidth()
+//            && a.getX() + a.getWidth() > b.getX()
+//            && a.getY() < b.getY() + b.getHeight()
+//            && a.getY() + a.getHeight() > b.getY();
+//    }
 
-                invincibleUntil = now + 1000;
+  
 
-                if (lives == 0) {
-                    gameOver = true;
-                    running = false;
-                }
-                break;
-            }
-        }
-    }
-
-    private void checkWinCondition() {
-
-        if (hasHoney && overlaps(hitbox, spawnZone)) {
-            hasHoney = false;
-            won = true;
-            running = false;
-        }
-    }
-
-    private boolean overlaps(Hitbox a, Hitbox b) {
-        return a.getX() < b.getX() + b.getWidth()
-            && a.getX() + a.getWidth() > b.getX()
-            && a.getY() < b.getY() + b.getHeight()
-            && a.getY() + a.getHeight() > b.getY();
-    }
-
-    private double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
-    }
->>>>>>> 02ad3fc234778f44982870483a89ab4b3a272ee2
 
     public double getX() { synchronized (position) { return position.getX(); } }
     public double getY() { synchronized (position) { return position.getY(); } }
