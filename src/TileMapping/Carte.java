@@ -62,11 +62,11 @@ public class Carte {
         
         // Fusion avec le deuxième constructeur de la classse carte
         try {
-            BufferedImage tileset = ImageIO.read(getClass().getResource("images/tileSetMinecraft32x32.png"));
-            tuiles = new BufferedImage[192];
+            BufferedImage tileset = ImageIO.read(getClass().getResource("images/TileSetRpg.png"));
+            tuiles = new BufferedImage[432];
             for (int i = 0; i < tuiles.length; i++) {
-                int x = (i % 16) * tailleTuile;
-                int y = (i / 16) * tailleTuile;
+                int x = (i % 24) * tailleTuile;
+                int y = (i / 24) * tailleTuile;
                 tuiles[i] = tileset.getSubimage(x, y, tailleTuile, tailleTuile);
             }
         } catch (IOException ex) {
@@ -162,6 +162,7 @@ public class Carte {
         }
     }
   }
+    
 //Méthode pour savoir si on a une collision ou non 
 //    public prochainetuileaccessible (double x, double y){
 //        int Col = 1;
