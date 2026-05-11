@@ -21,12 +21,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import Tools.Coordinates;
-import Tools.Hitbox;
 import Avatar.Monsters;
 import Avatar.Player;
+import Tools.Coordinates;
+import Tools.Hitbox;
+import multiplayer.DonneesMonstre;
 import multiplayer.DonneesJoueur;
 import multiplayer.GestionnaireJoueurs;
+import multiplayer.GestionnairesMonstres;
 
 public class Interface {
 
@@ -53,13 +55,17 @@ public class Interface {
         final Color maCouleur = moi.getCouleur();
 
         // Setup du jeu avec le spawn attribué par la DB
-        Hitbox monsterHitbox = new Hitbox(new Coordinates(0, 0), 40.0, 40.0);
-        Monsters monster = new Monsters(380, 280, 90, monsterHitbox);
-        monster.setMovementBounds(0, 0, windowWidth - monsterHitbox.getWidth(), windowHeight - monsterHitbox.getHeight()); // éviter de sortir de l'écran
-        monster.setColor(Color.RED);
+        GestionnairesMonstres gestionnairesMonstres = new GestionnairesMonstres();
+        boolean estAutoritaire = moi.avatar == 1;
+        List<DonneesMonstre> donneesMonstres = gestionnairesMonstres.initialiser();
 
         ArrayList<Monsters> monsters = new ArrayList<>();
-        monsters.add(monster);
+        for (DonneesMonstre dm : donneesMonstres) {
+            Monsters m = new Monsters(dm.x, dm.y, 90, new Hitbox(new Coordinates(0, 0), 40.0, 40.0));
+            m.setMovementBounds(0, 0, windowWidth - 40.0, windowHeight - 40.0);
+            m.setColor(Color.BLACK);
+            monsters.add(m);
+        }
 
         Hitbox playerHitbox = new Hitbox(new Coordinates(0, 0), 36.0, 36.0);
         Hitbox hiveZone = new Hitbox(new Coordinates(360, 260), 80.0, 80.0);
@@ -84,9 +90,11 @@ public class Interface {
                 g2.setColor(new Color(177, 241, 198));
                 g2.fillRect((int) spawnZone.getX(), (int) spawnZone.getY(), (int) spawnZone.getWidth(), (int) spawnZone.getHeight());
 
-                // Monstre
-                g2.setColor(monster.getColor() != null ? monster.getColor() : Color.RED);
-                g2.fillRect((int) monster.getX(), (int) monster.getY(), (int) monsterHitbox.getWidth(), (int) monsterHitbox.getHeight());
+                // Monstres
+                g2.setColor(Color.BLACK);
+                for (Monsters m : monsters) {
+                    g2.fillRect((int) m.getX(), (int) m.getY(), 40, 40);
+                }
 
                 // Autres joueurs lus depuis la DB
                 g2.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -145,6 +153,9 @@ public class Interface {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
+                for (Monsters m : monsters) {
+                    m.stopMovement();
+                }
                 player.stopMovement();
                 try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
                 frame.dispose();
@@ -153,7 +164,11 @@ public class Interface {
         });
 
         frame.setVisible(true);
-        monster.startMovement();
+        if (estAutoritaire) {
+            for (Monsters m : monsters) {
+                m.startMovement();
+            }
+        }
         player.startMovement();
 
         // Thread de synchronisation DB toutes les 100ms
@@ -169,30 +184,52 @@ public class Interface {
                         player.getLives()
                     );
 
+                    // Sync monstres
+                    if (estAutoritaire) {
+                        List<DonneesMonstre> positions = new ArrayList<>();
+                        for (int i = 0; i < monsters.size(); i++) {
+                            positions.add(new DonneesMonstre(
+                                donneesMonstres.get(i).id,
+                                monsters.get(i).getX(),
+                                monsters.get(i).getY()
+                            ));
+                        }
+                        gestionnairesMonstres.mettreAJourPositions(positions);
+                    } else {
+                        List<DonneesMonstre> remote = gestionnairesMonstres.lireTousLesMonstres();
+                        for (int i = 0; i < Math.min(monsters.size(), remote.size()); i++) {
+                            monsters.get(i).setPosition(remote.get(i).x, remote.get(i).y);
+                        }
+                    }
+
                     // Lire tous les joueurs pour le rendu
                     autresJoueurs.set(gestionnaire.lireTousLesJoueurs());
 
                     // Victoire locale : signaler et réinitialiser
                     if (player.isWon() && partieFinie.compareAndSet(false, true)) {
                         gestionnaire.signalerVictoire(joueurId);
-                        Thread.sleep(300); // laisser les autres clients détecter haswin=true
                         gestionnaire.reinitialiser();
+                        gestionnairesMonstres.reinitialiser();
                     }
 
                     // Victoire d'un autre joueur
-                    String gagnant = gestionnaire.detecterVictoire();
-                    if (gagnant != null && partieFinie.compareAndSet(false, true)) {
-                        gestionnaire.reinitialiser();
-                        SwingUtilities.invokeLater(() -> {
-                            JOptionPane.showMessageDialog(frame, gagnant + " a gagné !");
-                            player.stopMovement();
-                            try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
-                            frame.dispose();
-                            System.exit(0);
-                        });
+                    if (!partieFinie.get()) {
+                        String gagnant = gestionnaire.detecterVictoire();
+                        if (gagnant != null && partieFinie.compareAndSet(false, true)) {
+                            gestionnaire.reinitialiser();
+                            gestionnairesMonstres.reinitialiser();
+                            SwingUtilities.invokeLater(() -> {
+                                JOptionPane.showMessageDialog(frame, gagnant + " a gagné !");
+                                for (Monsters m : monsters) { m.stopMovement(); }
+                                player.stopMovement();
+                                try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
+                                frame.dispose();
+                                System.exit(0);
+                            });
+                        }
                     }
 
-                    Thread.sleep(100);
+                    Thread.sleep(16);
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 } catch (InterruptedException e) {

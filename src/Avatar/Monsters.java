@@ -109,8 +109,8 @@ public class Monsters extends Avatar {
         velocity.setY((d[1] / mag) * speed);
     }
 
-    public double getX() { return position.getX(); }
-    public double getY() { return position.getY(); }
+    public double getX() { synchronized (position) { return position.getX(); } }
+    public double getY() { synchronized (position) { return position.getY(); } }
     public double getVx() { return velocity.getX(); }
     public double getVy() { return velocity.getY(); }
     public double getHx() { return heading.getX(); }
@@ -118,8 +118,14 @@ public class Monsters extends Avatar {
     public double getMaxSpeed() { return speed; }
     public Color getColor() { return color; }
 
-    public void setX(double x) { position.setX(x); }
-    public void setY(double y) { position.setY(y); }
+    public void setX(double x) { synchronized (position) { position.setX(x); } }
+    public void setY(double y) { synchronized (position) { position.setY(y); } }
+    public void setPosition(double x, double y) {
+        synchronized (position) {
+            position.setX(x);
+            position.setY(y);
+        }
+    }
     public void setVx(double vx) { velocity.setX(vx); }
     public void setVy(double vy) { velocity.setY(vy); }
     public void setHx(double hx) { heading.setX(hx); }
