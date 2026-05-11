@@ -118,7 +118,8 @@ public class Player extends Avatar {
         }
         if (this.toucheHaut){
             double y = this.getPosition().getY();
-            y-= (1*this.speed*dt);
+            y-= (1*this.speed * dt);
+            this.position.setY(y);
         }
         if (this.getPosition().getX()> 1920 - this.getImage().getWidth()){// collision avec le bord droit de la scene
             this.position.setX( 1920 - this.getImage().getWidth());

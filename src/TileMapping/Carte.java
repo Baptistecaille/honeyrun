@@ -138,7 +138,7 @@ public class Carte {
     public void rendu(Graphics2D contexte, int x, int y) {
     for (int i = 0; i < decor.length; i++) {
         for (int j = 0; j < decor[i].length; j++) {
-            int tuileParDefaut = 26;
+            int tuileParDefaut = 144;
             int numeroTuile;
 
             // Vérifie si on est hors limites
@@ -160,6 +160,34 @@ public class Carte {
                 contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - y + offsetY ),tailleTuile * zoom,tailleTuile * zoom,null);
             }
         }
+    }
+    }
+  public BufferedImage genererImageMiniMap(int largeur, int hauteur) {
+    
+    // Taille réelle de la carte en pixels (sans zoom)
+    int cartePixelW = decor[0].length * tailleTuile;
+    int cartePixelH = decor.length * tailleTuile;
+
+    // Étape 1 : on dessine la carte en taille normale dans une image temporaire
+    BufferedImage imageComplete = new BufferedImage(cartePixelW, cartePixelH, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g = imageComplete.createGraphics();
+
+    for (int i = 0; i < decor.length; i++) {
+        for (int j = 0; j < decor[i].length; j++) {
+            int numeroTuile = decor[i][j];
+            if (numeroTuile <= 0 || numeroTuile >= tuiles.length) continue;
+            g.drawImage(tuiles[numeroTuile], j * tailleTuile, i * tailleTuile, tailleTuile, tailleTuile, null);
+        }
+    }
+    g.dispose();
+
+    // Étape 2 : on redimensionne l'image complète à la taille de la minimap (200x150)
+    BufferedImage minimap = new BufferedImage(largeur, hauteur, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D gMini = minimap.createGraphics();
+    gMini.drawImage(imageComplete, 0, 0, largeur, hauteur, null);
+    gMini.dispose();
+
+    return minimap;
     }
   }
     

@@ -55,7 +55,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     @Override
     public void actionPerformed(ActionEvent e){
         this.jeu.miseAJour();
-        this.jeu.rendu(contexte);
+        this.jeu.rendu(contexte,framebuffer.getWidth(), framebuffer.getHeight());
         this.jLabel1.repaint();
         
         

@@ -28,6 +28,7 @@ public class Jeu {
     private Carte calque1;
     private Carte calque2;
     private Carte calque3;
+    private BufferedImage minimap;
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
         // On crée une nouvelle image (TYPE_INT_ARGB)
@@ -46,6 +47,7 @@ public class Jeu {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
+        this.minimap = this.calque2.genererImageMiniMap(300, 225);
         this.score = 0;
 
         BufferedImage sprite = null;
@@ -62,8 +64,13 @@ public class Jeu {
         P1.startMovement();
         this.player = P1;
     }
+        private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
+        if (minimap == null) return;
+        int x = largeurEcran - minimap.getWidth()  - 15;
+        int y = hauteurEcran - minimap.getHeight() - 830;
+        contexte.drawImage(minimap, x, y, null);    }
 
-    public void rendu(Graphics2D contexte) {
+    public void rendu(Graphics2D contexte,int largeurEcran, int hauteurEcran) {
         int n = 32 ;
         double a = this.player.getPosition().getX();
         double b = this.player.getPosition().getY();
@@ -75,6 +82,7 @@ public class Jeu {
                                     //1.Rendu du décor 
         //2.Rendu des sprites
         this.player.rendu(contexte);
+        renduMiniMap(contexte, largeurEcran, hauteurEcran);
 
     }
 
