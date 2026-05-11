@@ -22,9 +22,9 @@ public class Player extends Avatar {
     private final Hitbox hiveZone, spawnZone;
     private final ArrayList<Monsters> monsters;
 
-    private final Set<Integer> keysPressed = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Integer> keysPressed = Collections.synchronizedSet(new HashSet<>()); 
 
-    private double minX = 0.0;
+    private double minX = 0.0; // Set bounderies for the player not to move outside the window or play area.
     private double minY = 0.0;
     private double maxX = Double.POSITIVE_INFINITY;
     private double maxY = Double.POSITIVE_INFINITY;
