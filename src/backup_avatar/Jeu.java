@@ -2,10 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package Avatar;
+package backup_avatar;
 
 import TileMapping.Carte;
-import Tools.Avatar;
+import Avatar.Avatar;
 import Tools.Coordinates;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -23,7 +23,6 @@ public class Jeu {
     protected BufferedImage decor;
     protected int score;
     protected Player player;
-    private Carte carte;
     private Carte calque1;
     private Carte calque2;
     private Carte calque3;
@@ -64,10 +63,10 @@ public class Jeu {
         }
         Coordinates position=new Coordinates(0,0);
         Coordinates spawn=new Coordinates (80,60);
-        Avatar avatar=new Avatar(position, sprite , 10);
+        
+        Avatar avatar=new Avatar(position, sprite , 10, null);
         Player P1= new Player(avatar,spawn,null);
         this.player=P1;
-        
         
     }
     

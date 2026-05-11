@@ -1,4 +1,4 @@
-package Avatar;
+package backup_avatar;
 
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;

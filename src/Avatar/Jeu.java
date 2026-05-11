@@ -30,10 +30,13 @@ public class Jeu {
     private Carte calque3;
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
+        // On crée une nouvelle image (TYPE_INT_ARGB)
         BufferedImage nouvelleImage = new BufferedImage(largeur, hauteur, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = nouvelleImage.createGraphics();
+        // On active le lissage pour une meilleure qualité
         g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
                              java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        // On dessine l'ancienne image dans la nouvelle
         g2d.drawImage(img, 0, 0, largeur, hauteur, null);
         g2d.dispose();
         return nouvelleImage;
@@ -56,21 +59,23 @@ public class Jeu {
         Hitbox playerHitbox = new Hitbox(new Coordinates(80, 60), 96.0, 96.0);
         Player P1 = new Player(80, 60, 200, playerHitbox, null, null, null, "Player1");
         P1.setImage(sprite);
-        P1.setMovementBounds(0, 0, 1920 - 96, 1088 - 96);
         P1.startMovement();
         this.player = P1;
     }
 
     public void rendu(Graphics2D contexte) {
-        int n = 32;
-        int Xp = (int)(this.player.getX() / (double) n);
-        int Yp = (int)(this.player.getY() / (double) n);
-        this.calque1.rendu(contexte, Xp, Yp); // fond
-        this.calque2.rendu(contexte, Xp, Yp);
-        this.calque3.rendu(contexte, Xp, Yp);
-        if (this.player.getImage() != null) {
-            contexte.drawImage(this.player.getImage(), 560, 544 , null);
-        }
+        int n = 32 ;
+        double a = this.player.getPosition().getX();
+        double b = this.player.getPosition().getY();
+        int Xp = (int) (a / (double) n) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient 
+        int Yp = (int)(b / (double) n) ;
+        this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
+        this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
+        this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
+                                    //1.Rendu du décor 
+        //2.Rendu des sprites
+        this.player.rendu(contexte);
+
     }
 
     public void miseAJour() {
