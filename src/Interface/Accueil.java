@@ -101,7 +101,8 @@ public class Accueil extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String nom = jTextField2.getText();
+        String nom = jTextField2.getText(); //Récupérer le nom entré par l'utilisateur
+        
 
         if (nom == null) {
             return;
@@ -109,37 +110,27 @@ public class Accueil extends javax.swing.JFrame {
 
         try {
             Connection connexion = DriverManager.getConnection(
-                "jdbc:mariadb://nemrod.ens2m.fr:3306/202562026_s2_vs1_tp1_honey_run/joueur",
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
                 "etudiant",
-                "YTDTvj9TR3CDYCmP"
-            );
+                "YTDTvj9TR3CDYCmP");
+                    
+            String sql = "INSERT INTO joueur (nom, spawnx, spawny, ) VALUES (?)";
+            PreparedStatement stmt = connexion.prepareStatement(sql);
+            stmt.setString(1, nom);
+            stmt.executeUpdate();
 
-            PreparedStatement requete = connexion.prepareStatement(
-                "SELECT pseudo FROM dresseurs WHERE pseudo = ?"
-            );
-            requete.setString(1, nom);
-
-            ResultSet resultat = requete.executeQuery();
-
-            if (resultat.next()) {
-                JOptionPane.showMessageDialog(null, "Super, bon courage!");
-                FenetreDeJeuGUI fenetreJeu = new FenetreDeJeuGUI(nom);
-                fenetreJeu.setVisible(true);
-                Salle_d_attente salle = new Salle_d_attente();
-                salle.setVisible(true);
-                this.dispose();
-
-            } else {
-                JOptionPane.showMessageDialog(null, "Le pseudo n'existe pas :'(");
-            }
-
-            resultat.close();
-            requete.close();
             connexion.close();
+            
+            
+            Salle_d_attente salle = new Salle_d_attente();
+            salle.setVisible(true);
+            this.dispose();
 
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }// TODO add your handling code here:
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
 

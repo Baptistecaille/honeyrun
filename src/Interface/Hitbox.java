@@ -12,5 +12,12 @@ public class Hitbox {
     private Double width;
     private Double height;
     private Coordinates Coordinates;
+
+    public Hitbox(Double width, Double height, Coordinates Coordinates) {
+        this.width = width;
+        this.height = height;
+        this.Coordinates = Coordinates;
+    }
+   
     
 }

@@ -4,21 +4,82 @@
  */
 package Interface;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import javax.swing.Timer;
 /**
  *
  * @author cpoussie
  */
-public class Character extends javax.swing.JFrame {
+public class Salle_attente extends javax.swing.JFrame {
     
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Character.class.getName());
-
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Salle_attente.class.getName());
+    private Timer timer;
+    
     /**
-     * Creates new form Character
+     * Creates new form Salle_attente
      */
-    public Character() {
+    public Salle_attente(Player player) {
+        this.player = player;
         initComponents();
+        lancerVerification();
     }
 
+
+    private void lancerVerification() {
+
+        timer = new Timer(2000, (e) -> {   // toutes les 2 secondes
+            verifierNbJoueurs();
+        });
+
+        timer.start();
+    }
+    
+    private void verifierNbJoueurs() {
+
+
+    try {
+        Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP");
+
+        String sql = "SELECT COUNT(*) FROM joueur";
+        PreparedStatement stmt = connexion.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+
+        if (rs.next()) {
+            int nbJoueurs = rs.getInt(1);
+            
+            jLabel1.setText("Joueurs connectés : " + nbJoueurs + "/4");
+ 
+
+            if (nbJoueurs >= 4) {
+                timer.stop();
+                ouvrirSalle();
+            }
+        }
+        connexion.close();
+
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+    
+    private void ouvrirSalle() {
+        // Ouvrir la fenêtre de jeu
+        Skin salle = new Skin();
+        salle.setVisible(true);
+
+        // Fermer la page d’attente
+        this.dispose();
+    }
+
+
+    /**
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -28,41 +89,31 @@ public class Character extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jTextField1 = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jTextField1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jTextField1.setText("Choose your character");
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
-            }
-        });
+        jLabel1.setText("jLabel1");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(88, 88, 88)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(106, Short.MAX_VALUE))
+                .addGap(150, 150, 150)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(124, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(30, 30, 30)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(239, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(183, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(101, 101, 101))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -86,10 +137,10 @@ public class Character extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Character().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new Salle_attente().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField jTextField1;
+    private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
 }
