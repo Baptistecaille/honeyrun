@@ -6,6 +6,14 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Interface",
+            "request": "launch",
+            "mainClass": "Avatar.tests.Interface",
+            "projectName": "honeyrun",
+            "classPaths": ["${workspaceFolder}/target/classes", "${env:HOME}/.m2/repository/org/mariadb/jdbc/mariadb-java-client/3.4.1/mariadb-java-client-3.4.1.jar"]
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"

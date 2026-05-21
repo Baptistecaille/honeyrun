@@ -103,7 +103,7 @@ public class Interface {
                     g2.setColor(j.getCouleur());
                     g2.fillRect((int) j.x, (int) j.y, 36, 36);
                     g2.setColor(Color.BLACK);
-                    g2.drawString(j.nom, (int) j.x, (int) j.y - 4);
+                    if (j.nom != null) g2.drawString(j.nom, (int) j.x, (int) j.y - 4);
                 }
 
                 // Joueur local (position précise depuis l'objet Player)

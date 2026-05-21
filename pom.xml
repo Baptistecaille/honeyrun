@@ -39,9 +39,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.1</version>
                 <configuration>
-                    <excludes>
-                        <exclude>Interface/Jeu.java</exclude>
-                    </excludes>
+                    <includes>
+                        <include>Avatar/**/*.java</include>
+                        <include>Tools/**/*.java</include>
+                        <include>multiplayer/**/*.java</include>
+                    </includes>
                 </configuration>
             </plugin>
             <plugin>

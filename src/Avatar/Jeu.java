@@ -7,6 +7,7 @@ package Avatar;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,8 +59,21 @@ public class Jeu {
             Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        ArrayList<Monsters> monsters = new ArrayList<>();
+        double[][] monsterSpawns = {{380, 280}, {150, 150}, {600, 400}};
+        for (double[] s : monsterSpawns) {
+            Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), 64, 64);
+            Monsters m = new Monsters(s[0], s[1], 120, mHitbox);
+            m.setMovementBounds(0, 0, 1920 - 64, 1088 - 64);
+            m.startMovement();
+            monsters.add(m);
+        }
+
+        Hitbox hiveZone = new Hitbox(new Coordinates(912, 496), 96, 96);
+        Hitbox spawnZone = new Hitbox(new Coordinates(32, 12), 96, 96);
+
         Hitbox playerHitbox = new Hitbox(new Coordinates(80, 60), 96.0, 96.0);
-        Player P1 = new Player(80, 60, 200, playerHitbox, null, null, null, "Player1");
+        Player P1 = new Player(80, 60, 200, playerHitbox, hiveZone, spawnZone, monsters, "Player1");
         P1.setImage(sprite);
         P1.startMovement();
         this.player = P1;

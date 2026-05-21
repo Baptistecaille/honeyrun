@@ -26,6 +26,9 @@ public class Player extends Avatar {
     private final Hitbox hiveZone, spawnZone;
     private final ArrayList<Monsters> monsters;
 
+    private double boundsMinX = 0, boundsMinY = 0;
+    private double boundsMaxX = 1920, boundsMaxY = 1088;
+
 
     private volatile boolean running = false;
     private Thread movementThread;
@@ -76,9 +79,9 @@ public class Player extends Avatar {
 
                 miseAJour(dt);
                 syncHitbox();
-//                updateHarvesting(now);
-//                handleMonsterCollisions(now);
-//                checkWinCondition();
+                updateHarvesting(now);
+                handleMonsterCollisions(now);
+                checkWinCondition();
 
                 try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
             }
@@ -121,17 +124,17 @@ public class Player extends Avatar {
             y-= (1*this.speed * dt);
             this.position.setY(y);
         }
-        if (this.getPosition().getX()> 1920 - this.getImage().getWidth()){// collision avec le bord droit de la scene
-            this.position.setX( 1920 - this.getImage().getWidth());
+        if (this.getPosition().getX() > boundsMaxX) {
+            this.position.setX(boundsMaxX);
         }
-        if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
-            this.position.setX(0);
-        }   
-        if(this.getPosition().getY()> 1088 - this.getImage().getHeight()){  // collision avec le bord bas de la scene
-            this.position.setY(1088 - this.getImage().getHeight());
+        if (this.getPosition().getX() < boundsMinX) {
+            this.position.setX(boundsMinX);
         }
-        if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
-            this.position.setY(0); 
+        if (this.getPosition().getY() > boundsMaxY) {
+            this.position.setY(boundsMaxY);
+        }
+        if (this.getPosition().getY() < boundsMinY) {
+            this.position.setY(boundsMinY);
         }
         System.out.println("X: " + getX());
         
@@ -146,106 +149,65 @@ public class Player extends Avatar {
             hitbox.update(position);
         }
     }
-//
-//    private void updateHarvesting(long now) {
-//        if (overlaps(hitbox, hiveZone)) {
-//            if (!isHarvesting) {
-//                isHarvesting = true;
-//                harvestStartTime = now;
-//            } else if (now - harvestStartTime >= 3000) { // 3s to harvest
-//                hasHoney = true;
-//                isHarvesting = false;
-//                harvestStartTime = 0;
-//            }
-//        } else {
-//            isHarvesting = false;
-//            harvestStartTime = 0;
-//        }
-//    }
 
-//    private void handleMonsterCollisions(long now) {
-//
-//        for (Monsters monster : monsters) {
-//
-//            if (overlaps(hitbox, monster.getHitbox())) {
-//                lives = Math.max(0, lives - 1);
-//                hasHoney = false;
-//                isHarvesting = false;
-//                harvestStartTime = 0;
-//
-//                synchronized (position) { // redirect to spawn when player is hit by a monster
-//                    position.setX(spawn.getX());
-//                    position.setY(spawn.getY());
-//                }
-//                syncHitbox();
-//
-//                invincibleUntil = now + 1000;
-//
-//                if (lives == 0) {
-//                    gameOver = true;
-//                    running = false;
-//                }
-//                break;
-//            }
-//        }
-//    }
+    private void updateHarvesting(long now) {
+        if (hiveZone == null) return;
+        if (overlaps(hitbox, hiveZone)) {
+            if (!isHarvesting) {
+                isHarvesting = true;
+                harvestStartTime = now;
+            } else if (now - harvestStartTime >= 3000) {
+                hasHoney = true;
+                isHarvesting = false;
+                harvestStartTime = 0;
+            }
+        } else {
+            isHarvesting = false;
+            harvestStartTime = 0;
+        }
+    }
 
-//    private void checkWinCondition() {
-//
-//        if (overlaps(hitbox, spawnZone)) {
-//            hasHoney = false;
-//            won = true;
-//            running = false;
-//        }
-//    }
+    private void handleMonsterCollisions(long now) {
+        if (monsters == null || now < invincibleUntil) return;
+        for (Monsters monster : monsters) {
+            if (overlaps(hitbox, monster.getHitbox())) {
+                lives = Math.max(0, lives - 1);
+                hasHoney = false;
+                isHarvesting = false;
+                harvestStartTime = 0;
 
-//    private boolean overlaps(Hitbox a, Hitbox b) {
-//        return a.getX() < b.getX() + b.getWidth()
-//            && a.getX() + a.getWidth() > b.getX()
-//            && a.getY() < b.getY() + b.getHeight()
-//            && a.getY() + a.getHeight() > b.getY();
-//    }
+                synchronized (position) {
+                    position.setX(spawn.getX());
+                    position.setY(spawn.getY());
+                }
+                syncHitbox();
 
+                invincibleUntil = now + 1000;
 
+                if (lives == 0) {
+                    gameOver = true;
+                    running = false;
+                }
+                break;
+            }
+        }
+    }
 
-//            if (overlaps(hitbox, monster.getHitbox())) {
-//                lives = Math.max(0, lives - 1);
-//                hasHoney = false;
-//                isHarvesting = false;
-//                harvestStartTime = 0;
-//
-//                synchronized (position) { // redirect to spawn when player is hit by a monster
-//                    position.setX(spawn.getX());
-//                    position.setY(spawn.getY());
-//                }
-//                syncHitbox();
-//
-//                invincibleUntil = now + 1000;
-//
-//                if (lives == 0) {
-//                    gameOver = true;
-//                    running = false;
-//                }
-//                break;
-//            }
-//        }
-//    }
-//
-//    private void checkWinCondition() {
-//
-//        if (hasHoney && overlaps(hitbox, spawnZone)) {
-//            hasHoney = false;
-//            won = true;
-//            running = false;
-//        }
-//    }
-//
-//    private boolean overlaps(Hitbox a, Hitbox b) {
-//        return a.getX() < b.getX() + b.getWidth()
-//            && a.getX() + a.getWidth() > b.getX()
-//            && a.getY() < b.getY() + b.getHeight()
-//            && a.getY() + a.getHeight() > b.getY();
-//    }
+    private void checkWinCondition() {
+        if (spawnZone == null) return;
+        if (hasHoney && overlaps(hitbox, spawnZone)) {
+            hasHoney = false;
+            won = true;
+            running = false;
+        }
+    }
+
+    private boolean overlaps(Hitbox a, Hitbox b) {
+        return a.getX() < b.getX() + b.getWidth()
+            && a.getX() + a.getWidth() > b.getX()
+            && a.getY() < b.getY() + b.getHeight()
+            && a.getY() + a.getHeight() > b.getY();
+    }
 
   
 
@@ -283,5 +245,29 @@ public class Player extends Avatar {
     public void setToucheBas(boolean etat){
         this.toucheBas = etat;
     }
-    
+
+    public void setMovementBounds(int minX, int minY, double maxX, double maxY) {
+        this.boundsMinX = minX;
+        this.boundsMinY = minY;
+        this.boundsMaxX = maxX;
+        this.boundsMaxY = maxY;
+    }
+
+    public void onKeyPressed(int keyCode) {
+        switch (keyCode) {
+            case java.awt.event.KeyEvent.VK_LEFT,  java.awt.event.KeyEvent.VK_Q -> setToucheGauche(true);
+            case java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.KeyEvent.VK_D -> setToucheDroite(true);
+            case java.awt.event.KeyEvent.VK_UP,    java.awt.event.KeyEvent.VK_Z -> setToucheHaut(true);
+            case java.awt.event.KeyEvent.VK_DOWN,  java.awt.event.KeyEvent.VK_S -> setToucheBas(true);
+        }
+    }
+
+    public void onKeyReleased(int keyCode) {
+        switch (keyCode) {
+            case java.awt.event.KeyEvent.VK_LEFT,  java.awt.event.KeyEvent.VK_Q -> setToucheGauche(false);
+            case java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.KeyEvent.VK_D -> setToucheDroite(false);
+            case java.awt.event.KeyEvent.VK_UP,    java.awt.event.KeyEvent.VK_Z -> setToucheHaut(false);
+            case java.awt.event.KeyEvent.VK_DOWN,  java.awt.event.KeyEvent.VK_S -> setToucheBas(false);
+        }
+    }
 }
