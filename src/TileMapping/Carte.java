@@ -11,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -75,7 +77,7 @@ public class Carte {
         
         try {
             // Ouverture du fichier en lecture avec un BufferedReader
-            BufferedReader fichier = new BufferedReader(new FileReader(nomdufichier));
+            BufferedReader fichier = ouvrirCarte(nomdufichier);
 
             String ligne;
 
@@ -116,6 +118,26 @@ public class Carte {
             // En cas d'erreur d'entrée/sortie, on affiche la pile d'appels
             e.printStackTrace();
         }
+    }
+
+    private BufferedReader ouvrirCarte(String nomdufichier) throws IOException {
+        // On garde le chemin disque pour le dev, mais on sait aussi relire la carte depuis les ressources.
+        File fichierLocal = new File(nomdufichier);
+        if (fichierLocal.exists()) {
+            return new BufferedReader(new FileReader(fichierLocal));
+        }
+
+        String cheminRessource = nomdufichier.replace('\\', '/');
+        if (cheminRessource.startsWith("src/")) {
+            cheminRessource = cheminRessource.substring(4);
+        }
+
+        InputStream flux = getClass().getResourceAsStream("/" + cheminRessource);
+        if (flux != null) {
+            return new BufferedReader(new InputStreamReader(flux));
+        }
+
+        throw new IOException("Carte introuvable: " + nomdufichier);
     }
     /**
      * Méthode de mise à jour de la carte.

@@ -210,6 +210,16 @@ public class Interface {
                         gestionnaire.signalerVictoire(joueurId);
                         gestionnaire.reinitialiser();
                         gestionnairesMonstres.reinitialiser();
+                        SwingUtilities.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(frame, "Vous avez gagné !");
+                            for (Monsters m : monsters) {
+                                m.stopMovement();
+                            }
+                            player.stopMovement();
+                            try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
+                            frame.dispose();
+                            System.exit(0);
+                        });
                     }
 
                     // Victoire d'un autre joueur

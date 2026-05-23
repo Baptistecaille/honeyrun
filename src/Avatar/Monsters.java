@@ -30,6 +30,9 @@ public class Monsters extends Avatar {
 
     @Override
     public void startMovement() {
+        if (running) {
+            return;
+        }
         running = true;
 
         movementThread = new Thread(() -> {
@@ -95,7 +98,14 @@ public class Monsters extends Avatar {
 
     @Override
     public void stopMovement() {
+        // Les deux threads du monstre s'arretent ensemble pour eviter qu'ils continuent a tourner apres la partie.
         running = false;
+        if (movementThread != null) {
+            movementThread.interrupt();
+        }
+        if (hitboxThread != null) {
+            hitboxThread.interrupt();
+        }
     }
 
     private void chooseRandomDirection() {

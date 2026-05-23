@@ -12,7 +12,8 @@ import Tools.Hitbox;
 import java.awt.Graphics2D;
 
 public class Player extends Avatar {
-    private boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
+    // Ces drapeaux sont lus par un thread de mouvement et ecrits par Swing, donc ils doivent etre visibles partout.
+    private volatile boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
     private int score;
 
     private final String name;
@@ -96,6 +97,7 @@ public class Player extends Avatar {
 
     @Override
     public void stopMovement() {
+        // On coupe la boucle de mouvement et on reveille le thread s'il dort encore.
         running = false;
         if (movementThread != null) {
             movementThread.interrupt();
@@ -136,10 +138,6 @@ public class Player extends Avatar {
         if (this.getPosition().getY() < boundsMinY) {
             this.position.setY(boundsMinY);
         }
-        System.out.println("X: " + getX());
-        
-       // if isAccessible
-       
         }
         
 

@@ -8,8 +8,10 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.Color;
 
 import javax.imageio.ImageIO;
 
@@ -26,6 +28,7 @@ public class Jeu {
     protected BufferedImage decor;
     protected int score;
     protected Player player;
+    private ArrayList<Monsters> monsters;
     private Carte calque1;
     private Carte calque2;
     private Carte calque3;
@@ -51,32 +54,60 @@ public class Jeu {
         this.minimap = this.calque2.genererImageMiniMap(300, 225);
         this.score = 0;
 
-        BufferedImage sprite = null;
-        try {
-            sprite = ImageIO.read(getClass().getResource("/resources/Mantereligieuse.png"));
-            sprite = redimensionner(sprite, 96, 96);
-        } catch (IOException ex) {
-            Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        // On accepte soit la ressource empaquetee, soit le fichier present dans le projet pour rester runnable en dev.
+        BufferedImage sprite = chargerSprite();
 
-        ArrayList<Monsters> monsters = new ArrayList<>();
+        this.monsters = new ArrayList<>();
         double[][] monsterSpawns = {{380, 280}, {150, 150}, {600, 400}};
         for (double[] s : monsterSpawns) {
             Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), 64, 64);
             Monsters m = new Monsters(s[0], s[1], 120, mHitbox);
             m.setMovementBounds(0, 0, 1920 - 64, 1088 - 64);
             m.startMovement();
-            monsters.add(m);
+            m.setColor(Color.BLACK);
+            this.monsters.add(m);
         }
 
         Hitbox hiveZone = new Hitbox(new Coordinates(912, 496), 96, 96);
         Hitbox spawnZone = new Hitbox(new Coordinates(32, 12), 96, 96);
 
         Hitbox playerHitbox = new Hitbox(new Coordinates(80, 60), 96.0, 96.0);
-        Player P1 = new Player(80, 60, 200, playerHitbox, hiveZone, spawnZone, monsters, "Player1");
+        Player P1 = new Player(80, 60, 200, playerHitbox, hiveZone, spawnZone, this.monsters, "Player1");
         P1.setImage(sprite);
+        P1.setMovementBounds(0, 0, 1920 - playerHitbox.getWidth(), 1088 - playerHitbox.getHeight());
         P1.startMovement();
         this.player = P1;
+    }
+
+    private BufferedImage chargerSprite() {
+        try {
+            // Premier essai: chargement depuis le classpath quand l'application est lancee depuis le jar.
+            var resource = getClass().getResource("/resources/Mantereligieuse.png");
+            if (resource != null) {
+                BufferedImage sprite = ImageIO.read(resource);
+                if (sprite != null) {
+                    return redimensionner(sprite, 96, 96);
+                }
+            }
+
+            // Fallback utile pendant le dev quand on execute depuis la racine du projet.
+            File fallback = new File("src/resources/Mantereligieuse.png");
+            if (fallback.exists()) {
+                BufferedImage sprite = ImageIO.read(fallback);
+                if (sprite != null) {
+                    return redimensionner(sprite, 96, 96);
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        BufferedImage placeholder = new BufferedImage(96, 96, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = placeholder.createGraphics();
+        g2d.setColor(Color.MAGENTA);
+        g2d.fillRect(0, 0, 96, 96);
+        g2d.dispose();
+        return placeholder;
     }
         private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
         if (minimap == null) return;
@@ -85,6 +116,10 @@ public class Jeu {
         contexte.drawImage(minimap, x, y, null);    }
 
     public void rendu(Graphics2D contexte,int largeurEcran, int hauteurEcran) {
+        // On repart d'une frame propre avant de redessiner la camera.
+        contexte.setBackground(new Color(0, 0, 0, 0));
+        contexte.clearRect(0, 0, largeurEcran, hauteurEcran);
+
         int n = 32 ;
         double a = this.player.getPosition().getX();
         double b = this.player.getPosition().getY();
@@ -95,9 +130,31 @@ public class Jeu {
         //this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
                                     //1.Rendu du décor 
         //2.Rendu des sprites
+        this.renduMonstres(contexte);
         this.player.rendu(contexte);
         renduMiniMap(contexte, largeurEcran, hauteurEcran);
 
+    }
+
+    private void renduMonstres(Graphics2D contexte) {
+        if (this.monsters == null) {
+            return;
+        }
+
+        // Les monstres sont dessines dans le meme repere camera que le fond.
+        int centreX = 960;
+        int centreY = 544;
+        double playerX = this.player.getPosition().getX();
+        double playerY = this.player.getPosition().getY();
+
+        for (Monsters monster : this.monsters) {
+            int x = (int) Math.round(monster.getX() - playerX + centreX);
+            int y = (int) Math.round(monster.getY() - playerY + centreY);
+            int w = (int) Math.round(monster.getHitbox().getWidth());
+            int h = (int) Math.round(monster.getHitbox().getHeight());
+            contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK);
+            contexte.fillRect(x, y, w, h);
+        }
     }
 
     public void miseAJour() {

@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 /**
@@ -16,17 +17,15 @@ import javax.swing.Timer;
  *
  * @author guillaume.laurent
  */
-public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener { 
-    
+public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener {
 
     private BufferedImage framebuffer;
     private Graphics2D contexte;
     private JLabel jLabel1;
-    private Jeu jeu; 
+    private Jeu jeu;
     private Timer timer;
 
     public FenetreDeJeu() {
-        // initialisation de la fenetre
         this.setSize(1920, 1088);
         this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -34,77 +33,75 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         this.jLabel1.setPreferredSize(new java.awt.Dimension(1920, 1088));
         this.setContentPane(this.jLabel1);
         this.pack();
+        // Le focus clavier doit rester sur la fenêtre pour que les touches soient lues de façon fiable.
+        this.setFocusable(true);
+        this.setFocusTraversalKeysEnabled(false);
 
-        // Creation du buffer pour l'affichage du jeu et recuperation du contexte graphique
+        // Le jeu dessine dans un framebuffer hors ecran, puis on affiche cette image dans le JLabel.
         this.framebuffer = new BufferedImage(this.jLabel1.getWidth(), this.jLabel1.getHeight(), BufferedImage.TYPE_INT_ARGB);
         this.jLabel1.setIcon(new ImageIcon(framebuffer));
         this.contexte = this.framebuffer.createGraphics();
-        
-        // Creation du jeu
-        this.jeu =  new Jeu();
-        
-        //Creation du Timer qui appelle this.actionPerformed() toutes les 40 ms
-        this.timer = new Timer(40,this);
+
+        this.jeu = new Jeu();
+
+        this.timer = new Timer(40, this);
         this.timer.start();
-        
-        //Ajout d'un ecouteur clavier
+
         this.addKeyListener(this);
+        SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
 
-    // Methode appelee par le timer et qui effectue la boucle du jeu
     @Override
-    public void actionPerformed(ActionEvent e){
+    public void actionPerformed(ActionEvent e) {
+        // Nettoyage explicite pour eviter de conserver des pixels d'une frame precedente.
+        this.contexte.setBackground(new java.awt.Color(0, 0, 0, 0));
+        this.contexte.clearRect(0, 0, this.framebuffer.getWidth(), this.framebuffer.getHeight());
         this.jeu.miseAJour();
-        this.jeu.rendu(contexte,framebuffer.getWidth(), framebuffer.getHeight());
+        this.jeu.rendu(this.contexte, this.framebuffer.getWidth(), this.framebuffer.getHeight());
         this.jLabel1.repaint();
-        
-        
-   }
+    }
+
     public static void main(String[] args) {
-        FenetreDeJeu fenetre = new FenetreDeJeu();
-        fenetre.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            FenetreDeJeu fenetre = new FenetreDeJeu();
+            fenetre.setVisible(true);
+        });
     }
 
     @Override
     public void keyTyped(KeyEvent evt) {
-        //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public void keyPressed(KeyEvent evt) {
-        if (evt.getKeyCode() == evt.VK_RIGHT){
+        // Flèches et ZQSD pilotent le joueur local.
+        if (evt.getKeyCode() == KeyEvent.VK_RIGHT || evt.getKeyCode() == KeyEvent.VK_D) {
             this.jeu.getPlayer().setToucheDroite(true);
         }
-        if (evt.getKeyCode()== evt.VK_LEFT){
+        if (evt.getKeyCode() == KeyEvent.VK_LEFT || evt.getKeyCode() == KeyEvent.VK_Q) {
             this.jeu.getPlayer().setToucheGauche(true);
         }
-        if (evt.getKeyCode() == evt.VK_DOWN){
+        if (evt.getKeyCode() == KeyEvent.VK_DOWN || evt.getKeyCode() == KeyEvent.VK_S) {
             this.jeu.getPlayer().setToucheBas(true);
         }
-        if (evt.getKeyCode()== evt.VK_UP){
+        if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_Z) {
             this.jeu.getPlayer().setToucheHaut(true);
         }
-        
-        //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public void keyReleased(KeyEvent evt) {
-        if (evt.getKeyCode() == evt.VK_RIGHT){
+        if (evt.getKeyCode() == KeyEvent.VK_RIGHT || evt.getKeyCode() == KeyEvent.VK_D) {
             this.jeu.getPlayer().setToucheDroite(false);
         }
-        if (evt.getKeyCode()== evt.VK_LEFT){
+        if (evt.getKeyCode() == KeyEvent.VK_LEFT || evt.getKeyCode() == KeyEvent.VK_Q) {
             this.jeu.getPlayer().setToucheGauche(false);
         }
-        if (evt.getKeyCode() == evt.VK_UP){
-            this.jeu.getPlayer().setToucheHaut(false);
-        }
-        if (evt.getKeyCode()== evt.VK_DOWN){
+        if (evt.getKeyCode() == KeyEvent.VK_DOWN || evt.getKeyCode() == KeyEvent.VK_S) {
             this.jeu.getPlayer().setToucheBas(false);
         }
-        //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_Z) {
+            this.jeu.getPlayer().setToucheHaut(false);
+        }
     }
-    
-    
-
 }
