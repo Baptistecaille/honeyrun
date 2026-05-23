@@ -243,7 +243,7 @@ public class Interface {
         new Thread(() -> {
             while (true) {
                 panel.repaint();
-                LockSupport.parkNanos(16_000_000L);
+                LockSupport.parkNanos(16_000_000L); // ~16ms pour ~60fps
                 if (Thread.currentThread().isInterrupted()) break;
             }
         }, "render-loop").start();

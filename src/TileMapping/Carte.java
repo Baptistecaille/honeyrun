@@ -207,7 +207,7 @@ public class Carte {
 //        
 //        
 //    }
-}
+//}
 
  
 //    public void rendu(Graphics2D contexte, int x , int y) {
