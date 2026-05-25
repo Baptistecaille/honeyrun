@@ -19,9 +19,9 @@ import javax.swing.JOptionPane;
  */
 public class GestionnaireJoueurs {
 
-    // Coordonnées de spawn fixes par numéro d'avatar (fenêtre 800x600)
-    private static final double[] SPAWN_X = {0, 20, 744, 20,  744};
-    private static final double[] SPAWN_Y = {0, 20, 20,  544, 544};
+    // Coordonnées de spawn fixes par numéro d'avatar 60x34 tuiles (1920x1088 pixels)
+    private static final double[] SPAWN_X = {20, 744, 20,  744}; // to modify accoording to the map area
+    private static final double[] SPAWN_Y = {20, 20,  544, 544}; // to modify accoording to the map area
 
     private final Connection connexion;
 
@@ -57,8 +57,8 @@ public class GestionnaireJoueurs {
             return null;
         }
 
-        double spawnX = SPAWN_X[avatarChoisi];
-        double spawnY = SPAWN_Y[avatarChoisi];
+        double spawnX = SPAWN_X[avatarChoisi - 1];
+        double spawnY = SPAWN_Y[avatarChoisi - 1];
 
         try (PreparedStatement ps = connexion.prepareStatement(
                 "INSERT INTO `character` (pseudo, spawnX, spawnY, X, Y, hasWin, hasHoney, skin, lifes) "

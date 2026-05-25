@@ -8,9 +8,12 @@ import Tools.Hitbox;
 
 public class Monsters extends Avatar {
 
+    private static final double TILE_SIZE = 32.0;
+
     private Coordinates velocity;
     private Coordinates heading;
     private Color color;
+    private double stepAccumulator = 0.0;
 
     private double minX = 0.0; // a revoir 
     private double minY = 0.0;
@@ -19,13 +22,15 @@ public class Monsters extends Avatar {
 
     private volatile boolean running = false;
     private Thread movementThread;
-    private Thread hitboxThread;
     private final Random random = new Random();
 
     public Monsters(double x, double y, double speed, Hitbox hitbox) {
-        super(new Coordinates(x, y), null, speed, hitbox);
+        super(new Coordinates(snapToTileValue(x), snapToTileValue(y)), null, speed, hitbox);
         this.velocity = new Coordinates(0, 0);
         this.heading = new Coordinates(0, 0);
+        if (this.hitbox != null) {
+            this.hitbox.update(this.position);
+        }
     }
 
     @Override
@@ -37,63 +42,20 @@ public class Monsters extends Avatar {
 
         movementThread = new Thread(() -> {
             long lastTime = System.currentTimeMillis();
-            long lastDirectionChange = lastTime;
-            chooseRandomDirection();
 
             while (running) {
                 long now = System.currentTimeMillis();
                 double dt = (now - lastTime) / 1000.0;
                 lastTime = now;
 
-                if (now - lastDirectionChange >= 3000) {
-                    chooseRandomDirection();
-                    lastDirectionChange = now;
-                }
-
-                double currentSpeed = Math.hypot(velocity.getX(), velocity.getY());
-                if (currentSpeed > 0) {
-                    heading.setX(velocity.getX() / currentSpeed);
-                    heading.setY(velocity.getY() / currentSpeed);
-                }
-
-                synchronized (position) {
-                    position.setX(position.getX() + velocity.getX() * dt);
-                    position.setY(position.getY() + velocity.getY() * dt);
-
-                    if (position.getX() < minX) {
-                        position.setX(minX);
-                        velocity.setX(Math.abs(velocity.getX()));
-                    } else if (position.getX() > maxX) {
-                        position.setX(maxX);
-                        velocity.setX(-Math.abs(velocity.getX()));
-                    }
-
-                    if (position.getY() < minY) {
-                        position.setY(minY);
-                        velocity.setY(Math.abs(velocity.getY()));
-                    } else if (position.getY() > maxY) {
-                        position.setY(maxY);
-                        velocity.setY(-Math.abs(velocity.getY()));
-                    }
-                }
+                miseAJour(dt);
+                syncHitbox();
 
                 try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
             }
         }, "monster-movement");
 
-        hitboxThread = new Thread(() -> {
-            while (running) {
-                if (hitbox != null) {
-                    synchronized (position) {
-                        hitbox.update(position);
-                    }
-                }
-                try { Thread.sleep(8); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
-            }
-        }, "monster-hitbox");
-
         movementThread.start();
-        hitboxThread.start();
     }
 
     @Override
@@ -103,20 +65,59 @@ public class Monsters extends Avatar {
         if (movementThread != null) {
             movementThread.interrupt();
         }
-        if (hitboxThread != null) {
-            hitboxThread.interrupt();
+    }
+
+    public void miseAJour(double dt) {
+        if (speed <= 0) {
+            return;
+        }
+
+        stepAccumulator += dt;
+        double secondsPerTile = TILE_SIZE / speed;
+        if (stepAccumulator < secondsPerTile) {
+            velocity.setX(0);
+            velocity.setY(0);
+            return;
+        }
+
+        stepAccumulator -= secondsPerTile;
+        synchronized (position) {
+            chooseRandomDirection();
+        }
+    }
+
+    private void syncHitbox() {
+        if (hitbox != null) {
+            synchronized (position) {
+                hitbox.update(position);
+            }
         }
     }
 
     private void chooseRandomDirection() {
         int[][] dirs = {
-            { 1, 0}, {-1, 0}, {0, 1}, {0,-1},
-            { 1, 1}, { 1,-1}, {-1, 1}, {-1,-1}
+            { 1, 0}, {-1, 0}, {0, 1}, {0,-1}
         };
-        int[] d = dirs[random.nextInt(dirs.length)];
-        double mag = Math.hypot(d[0], d[1]); // should always be 1 or sqrt(2) hypot sum of squares
-        velocity.setX((d[0] / mag) * speed);
-        velocity.setY((d[1] / mag) * speed);
+        int startIndex = random.nextInt(dirs.length);
+
+        for (int i = 0; i < dirs.length; i++) {
+            int[] d = dirs[(startIndex + i) % dirs.length];
+            double nextX = position.getX() + d[0] * TILE_SIZE;
+            double nextY = position.getY() + d[1] * TILE_SIZE;
+
+            if (nextX >= minX && nextX <= maxX && nextY >= minY && nextY <= maxY) {
+                position.setX(nextX);
+                position.setY(nextY);
+                heading.setX(d[0]);
+                heading.setY(d[1]);
+                velocity.setX(d[0] * TILE_SIZE);
+                velocity.setY(d[1] * TILE_SIZE);
+                return;
+            }
+        }
+
+        velocity.setX(0);
+        velocity.setY(0);
     }
 
     public double getX() { synchronized (position) { return position.getX(); } }
@@ -132,8 +133,12 @@ public class Monsters extends Avatar {
     public void setY(double y) { synchronized (position) { position.setY(y); } }
     public void setPosition(double x, double y) {
         synchronized (position) {
-            position.setX(x);
-            position.setY(y);
+            position.setX(snapToTile(x));
+            position.setY(snapToTile(y));
+            stepAccumulator = 0.0;
+            if (hitbox != null) {
+                hitbox.update(position);
+            }
         }
     }
     public void setVx(double vx) { velocity.setX(vx); }
@@ -148,5 +153,13 @@ public class Monsters extends Avatar {
         this.minY = minY;
         this.maxX = Math.max(minX, maxX);
         this.maxY = Math.max(minY, maxY);
+    }
+
+    private double snapToTile(double value) {
+        return snapToTileValue(value);
+    }
+
+    private static double snapToTileValue(double value) {
+        return Math.round(value / TILE_SIZE) * TILE_SIZE;
     }
 }

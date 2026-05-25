@@ -1,12 +1,5 @@
 package Avatar;
-
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-
 import Tools.Coordinates;
 import Tools.Hitbox;
 import java.awt.Graphics2D;
@@ -14,7 +7,6 @@ import java.awt.Graphics2D;
 public class Player extends Avatar {
     // Ces drapeaux sont lus par un thread de mouvement et ecrits par Swing, donc ils doivent etre visibles partout.
     private volatile boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
-    private int score;
 
     private final String name;
     private final Coordinates spawn;
@@ -91,8 +83,8 @@ public class Player extends Avatar {
         movementThread.start();
     }
     
-     public void rendu(Graphics2D contexte) {
-        contexte.drawImage(this.getImage(), 960, 544 , null);
+     public void rendu(Graphics2D contexte, int displayWidth, int displayHeight) {
+        contexte.drawImage(this.getImage(), 960, 480, displayWidth, displayHeight, null);
     }
 
     @Override
@@ -106,43 +98,30 @@ public class Player extends Avatar {
 
 
     public void miseAJour(double dt) {
-        if (this.toucheGauche){
-            double x = this.getPosition().getX();
-            x-= (1*this.speed * dt);
-            this.position.setX(x);
+        double newX, newY;
+        synchronized (position) {
+            newX = position.getX();
+            newY = position.getY();
         }
-        if (this.toucheDroite){
-            double x = this.getPosition().getX();
-            x+= (1*this.speed * dt);
-            this.position.setX(x);
+
+        if (this.toucheGauche)  newX -= this.speed * dt;
+        if (this.toucheDroite)  newX += this.speed * dt;
+        if (this.toucheBas)     newY += this.speed * dt;
+        if (this.toucheHaut)    newY -= this.speed * dt;
+
+        newX = Math.max(boundsMinX, Math.min(boundsMaxX, newX));
+        newY = Math.max(boundsMinY, Math.min(boundsMaxY, newY));
+
+        synchronized (position) {
+            position.setX(newX);
+            position.setY(newY);
         }
-        if (this.toucheBas){
-            double y = this.getPosition().getY();
-            y+= (1*this.speed * dt);
-            this.position.setY(y);
-        }
-        if (this.toucheHaut){
-            double y = this.getPosition().getY();
-            y-= (1*this.speed * dt);
-            this.position.setY(y);
-        }
-        if (this.getPosition().getX() > boundsMaxX) {
-            this.position.setX(boundsMaxX);
-        }
-        if (this.getPosition().getX() < boundsMinX) {
-            this.position.setX(boundsMinX);
-        }
-        if (this.getPosition().getY() > boundsMaxY) {
-            this.position.setY(boundsMaxY);
-        }
-        if (this.getPosition().getY() < boundsMinY) {
-            this.position.setY(boundsMinY);
-        }
-        }
+    }
         
 
 
     private void syncHitbox() {
+        if (hitbox == null) return;
         synchronized (position) {
             hitbox.update(position);
         }
@@ -167,6 +146,7 @@ public class Player extends Avatar {
 
     private void handleMonsterCollisions(long now) {
         if (monsters == null || now < invincibleUntil) return;
+        if (spawnZone != null && overlaps(hitbox, spawnZone)) return;
         for (Monsters monster : monsters) {
             if (overlaps(hitbox, monster.getHitbox())) {
                 lives = Math.max(0, lives - 1);

@@ -25,6 +25,13 @@ import Tools.Hitbox;
  */
 public class Jeu {
 
+    public static final int TILE_SIZE = 32;
+    public static final int MAP_ZOOM = 3;
+    public static final int CAMERA_OFFSET_TILES_X = 10;
+    public static final int CAMERA_OFFSET_TILES_Y = 5;
+    private static final double MONSTER_SPEED = 32.0;
+    private static final double MONSTER_SIZE = 32.0;
+
     protected BufferedImage decor;
     protected int score;
     protected Player player;
@@ -48,6 +55,10 @@ public class Jeu {
     }
 
     public Jeu() {
+        this(80, 60, "Player1");
+    }
+
+    public Jeu(double playerSpawnX, double playerSpawnY, String playerName) {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
@@ -58,21 +69,21 @@ public class Jeu {
         BufferedImage sprite = chargerSprite();
 
         this.monsters = new ArrayList<>();
-        double[][] monsterSpawns = {{380, 280}, {150, 150}, {600, 400}};
+        double[][] monsterSpawns = {{384, 288}, {160, 160}, {608, 416}};
         for (double[] s : monsterSpawns) {
-            Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), 64, 64);
-            Monsters m = new Monsters(s[0], s[1], 120, mHitbox);
-            m.setMovementBounds(0, 0, 1920 - 64, 1088 - 64);
+            Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), MONSTER_SIZE, MONSTER_SIZE);
+            Monsters m = new Monsters(s[0], s[1], MONSTER_SPEED, mHitbox);
+            m.setMovementBounds(0, 0, 1920 - MONSTER_SIZE, 1088 - MONSTER_SIZE);
             m.startMovement();
             m.setColor(Color.BLACK);
             this.monsters.add(m);
         }
 
         Hitbox hiveZone = new Hitbox(new Coordinates(912, 496), 96, 96);
-        Hitbox spawnZone = new Hitbox(new Coordinates(32, 12), 96, 96);
+        Hitbox spawnZone = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), 96, 96);
 
-        Hitbox playerHitbox = new Hitbox(new Coordinates(80, 60), 96.0, 96.0);
-        Player P1 = new Player(80, 60, 200, playerHitbox, hiveZone, spawnZone, this.monsters, "Player1");
+        Hitbox playerHitbox = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), 32.0, 32.0);
+        Player P1 = new Player(playerSpawnX, playerSpawnY, 200, playerHitbox, hiveZone, spawnZone, this.monsters, playerName);
         P1.setImage(sprite);
         P1.setMovementBounds(0, 0, 1920 - playerHitbox.getWidth(), 1088 - playerHitbox.getHeight());
         P1.startMovement();
@@ -112,28 +123,40 @@ public class Jeu {
         private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
         if (minimap == null) return;
         int x = largeurEcran - minimap.getWidth()  - 15;
-        int y = hauteurEcran - minimap.getHeight() - 830;
-        contexte.drawImage(minimap, x, y, null);    }
+        int y = hauteurEcran - minimap.getHeight() - 15;
+        contexte.drawImage(minimap, x, y, null);
+    }
 
     public void rendu(Graphics2D contexte,int largeurEcran, int hauteurEcran) {
         // On repart d'une frame propre avant de redessiner la camera.
         contexte.setBackground(new Color(0, 0, 0, 0));
         contexte.clearRect(0, 0, largeurEcran, hauteurEcran);
 
-        int n = 32 ;
         double a = this.player.getPosition().getX();
         double b = this.player.getPosition().getY();
-        int Xp = (int) (a / (double) n) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient 
-        int Yp = (int)(b / (double) n) ;
+        int Xp = (int) (a / (double) TILE_SIZE) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient
+        int Yp = (int)(b / (double) TILE_SIZE) ;
         this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
         this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
         //this.calque3.rendu(contexte, Xp, Yp);// 3 ème calque
-                                    //1.Rendu du décor 
+                                    //1.Rendu du décor
         //2.Rendu des sprites
         this.renduMonstres(contexte);
-        this.player.rendu(contexte);
+        this.player.rendu(contexte,
+            (int)(player.getHitbox().getWidth()  * MAP_ZOOM),
+            (int)(player.getHitbox().getHeight() * MAP_ZOOM));
         renduMiniMap(contexte, largeurEcran, hauteurEcran);
 
+    }
+
+    public int worldToScreenX(double worldX) {
+        int cameraTileX = (int) (this.player.getPosition().getX() / (double) TILE_SIZE);
+        return (int) Math.round(MAP_ZOOM * (worldX - cameraTileX * TILE_SIZE + CAMERA_OFFSET_TILES_X * TILE_SIZE));
+    }
+
+    public int worldToScreenY(double worldY) {
+        int cameraTileY = (int) (this.player.getPosition().getY() / (double) TILE_SIZE);
+        return (int) Math.round(MAP_ZOOM * (worldY - cameraTileY * TILE_SIZE + CAMERA_OFFSET_TILES_Y * TILE_SIZE));
     }
 
     private void renduMonstres(Graphics2D contexte) {
@@ -141,19 +164,14 @@ public class Jeu {
             return;
         }
 
-        // Les monstres sont dessines dans le meme repere camera que le fond.
-        int centreX = 960;
-        int centreY = 544;
-        double playerX = this.player.getPosition().getX();
-        double playerY = this.player.getPosition().getY();
-
+        // Meme repere que Carte.rendu: les monstres gardent une position monde, puis la camera tile les projette a l'ecran.
         for (Monsters monster : this.monsters) {
-            int x = (int) Math.round(monster.getX() - playerX + centreX);
-            int y = (int) Math.round(monster.getY() - playerY + centreY);
+            int x = worldToScreenX(monster.getX());
+            int y = worldToScreenY(monster.getY());
             int w = (int) Math.round(monster.getHitbox().getWidth());
             int h = (int) Math.round(monster.getHitbox().getHeight());
             contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK);
-            contexte.fillRect(x, y, w, h);
+            contexte.fillRect(x, y, w * MAP_ZOOM, h * MAP_ZOOM);
         }
     }
 
@@ -166,5 +184,13 @@ public class Jeu {
 
     public Player getPlayer() {
         return this.player;
+    }
+
+    public void stopMonstres() {
+        if (monsters != null) {
+            for (Monsters m : monsters) {
+                m.stopMovement();
+            }
+        }
     }
 }
