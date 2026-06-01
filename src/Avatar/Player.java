@@ -29,6 +29,7 @@ public class Player extends Avatar {
     private volatile long invincibleUntil = 0;
     private volatile boolean won = false;
     private volatile boolean gameOver = false;
+   
     
 
     public Player(
@@ -97,26 +98,66 @@ public class Player extends Avatar {
     }
 
 
+//    public void miseAJour2(double dt) {
+//        
+//        double newX, newY;
+//        synchronized (position) {
+//            newX = position.getX();
+//            newY = position.getY();
+//        }
+//
+//        if (this.toucheGauche)  newX -= this.speed * dt;
+//        if (this.toucheDroite)  newX += this.speed * dt;
+//        if (this.toucheBas)     newY += this.speed * dt;
+//        if (this.toucheHaut)    newY -= this.speed * dt;
+//
+//        newX = Math.max(boundsMinX, Math.min(boundsMaxX, newX));
+//        newY = Math.max(boundsMinY, Math.min(boundsMaxY, newY));
+//
+//        synchronized (position) {
+//            position.setX(newX);
+//            position.setY(newY);
+//        }
+//    }
+    
     public void miseAJour(double dt) {
-        double newX, newY;
-        synchronized (position) {
-            newX = position.getX();
-            newY = position.getY();
+        if (this.toucheGauche){
+            double x = this.getPosition().getX();
+            x-= (1*this.speed * dt);
+            this.position.setX(x);
         }
-
-        if (this.toucheGauche)  newX -= this.speed * dt;
-        if (this.toucheDroite)  newX += this.speed * dt;
-        if (this.toucheBas)     newY += this.speed * dt;
-        if (this.toucheHaut)    newY -= this.speed * dt;
-
-        newX = Math.max(boundsMinX, Math.min(boundsMaxX, newX));
-        newY = Math.max(boundsMinY, Math.min(boundsMaxY, newY));
-
-        synchronized (position) {
-            position.setX(newX);
-            position.setY(newY);
+        if (this.toucheDroite){
+            double x = this.getPosition().getX();
+            x+= (1*this.speed * dt);
+            this.position.setX(x);
         }
-    }
+        if (this.toucheBas){
+            double y = this.getPosition().getY();
+            y+= (1*this.speed * dt);
+            this.position.setY(y);
+        }
+        if (this.toucheHaut){
+            double y = this.getPosition().getY();
+            y-= (1*this.speed * dt);
+            this.position.setY(y);
+        }
+        if (this.getPosition().getX()> 1920 - 32){// collision avec le bord droit de la scene, taille de la hitbox
+            this.position.setX( 1920 - 32);
+        }
+        if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
+            this.position.setX(0);
+        }   
+        if(this.getPosition().getY()> 1088 - 32){  // collision avec le bord bas de la scene
+            this.position.setY(1088 - 32);
+        }
+        if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
+            this.position.setY(0); 
+        }
+ 
+        
+       // if isAccessible
+       
+        }
         
 
 
@@ -231,21 +272,5 @@ public class Player extends Avatar {
         this.boundsMaxY = maxY;
     }
 
-    public void onKeyPressed(int keyCode) {
-        switch (keyCode) {
-            case java.awt.event.KeyEvent.VK_LEFT,  java.awt.event.KeyEvent.VK_Q -> setToucheGauche(true);
-            case java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.KeyEvent.VK_D -> setToucheDroite(true);
-            case java.awt.event.KeyEvent.VK_UP,    java.awt.event.KeyEvent.VK_Z -> setToucheHaut(true);
-            case java.awt.event.KeyEvent.VK_DOWN,  java.awt.event.KeyEvent.VK_S -> setToucheBas(true);
-        }
-    }
-
-    public void onKeyReleased(int keyCode) {
-        switch (keyCode) {
-            case java.awt.event.KeyEvent.VK_LEFT,  java.awt.event.KeyEvent.VK_Q -> setToucheGauche(false);
-            case java.awt.event.KeyEvent.VK_RIGHT, java.awt.event.KeyEvent.VK_D -> setToucheDroite(false);
-            case java.awt.event.KeyEvent.VK_UP,    java.awt.event.KeyEvent.VK_Z -> setToucheHaut(false);
-            case java.awt.event.KeyEvent.VK_DOWN,  java.awt.event.KeyEvent.VK_S -> setToucheBas(false);
-        }
-    }
+   
 }
