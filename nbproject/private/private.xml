@@ -3,12 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/TileMapping/Carte.java</file>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/Avatar/tests/Interface.java</file>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/Avatar/Jeu.java</file>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/TileMapping/FenetreDeJeu.java</file>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/Avatar/Player.java</file>
-            <file>file://HERMES/EDU$/elehec/Documents/GitHub/honeyrun/src/Avatar/FenetreDeJeu.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Accueil.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/FenetreDeJeu.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Skin.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/Jeu.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/Monsters.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/BackgroundPanel.java</file>
+            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Lobby.java</file>
         </group>
     </open-files>
 </project-private>

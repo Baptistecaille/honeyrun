@@ -108,7 +108,10 @@ public class Player {
     public int getY() { return y; }
     public void setY(int y) { this.y = y; }
 
-    public boolean isHasHoney() { return hasHoney; }
+    public boolean isHasHoney() { 
+        return hasHoney; 
+    }
+    
     public void setHasHoney(boolean hasHoney) { this.hasHoney = hasHoney; }
 
     public boolean isHasWon() { return hasWon; }

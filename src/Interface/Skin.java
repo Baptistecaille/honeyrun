@@ -10,6 +10,8 @@ import java.awt.Image;
 import java.sql.*;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class Skin extends javax.swing.JFrame {
 
@@ -17,6 +19,7 @@ public class Skin extends javax.swing.JFrame {
 
     public Skin(PlayerSQL player) {
         this.player = player;
+        setContentPane(new BackgroundPanel("Z:/Documents/GitHub/honeyrun/src/Interface/honey_background.png"));
         initComponents();
         setLocationRelativeTo(null);
 
@@ -25,9 +28,7 @@ public class Skin extends javax.swing.JFrame {
         setupListeners();
     }
 
-    // -----------------------------
-    // 1. Vérifier si un skin est libre
-    // -----------------------------
+
     private boolean isSkinAvailable(String skinName) {
         try {
             Connection connexion = DriverManager.getConnection(
@@ -37,14 +38,14 @@ public class Skin extends javax.swing.JFrame {
             );
 
             PreparedStatement requete = connexion.prepareStatement(
-                "SELECT available FROM skins WHERE name = ?"
+                "SELECT Disponibilité FROM Characters WHERE nom = ?"
             );
             requete.setString(1, skinName);
 
             ResultSet rs = requete.executeQuery();
 
             if (rs.next()) {
-                boolean dispo = rs.getBoolean("available");
+                boolean dispo = rs.getBoolean("Disponibilité");
                 rs.close();
                 requete.close();
                 connexion.close();
@@ -61,10 +62,42 @@ public class Skin extends javax.swing.JFrame {
 
         return false;
     }
+    
+    private int getSkinId(String skinName) {
+        try {
+            Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP"
+            );
 
-    // -----------------------------
-    // 2. Charger les images des boutons
-    // -----------------------------
+            PreparedStatement requete = connexion.prepareStatement(
+                "SELECT id FROM Characters WHERE nom = ?"
+            );
+            requete.setString(1, skinName);
+
+            ResultSet rs = requete.executeQuery();
+
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                rs.close();
+                requete.close();
+                connexion.close();
+                return id;
+            }
+
+            rs.close();
+            requete.close();
+            connexion.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+
     private void setButtonImage(javax.swing.JButton button, String resourcePath) {
         java.net.URL imgURL = getClass().getResource(resourcePath);
         if (imgURL == null) {
@@ -82,34 +115,38 @@ public class Skin extends javax.swing.JFrame {
         setButtonImage(jButton1, "/resources/Mantereligieuse.png");
         setButtonImage(jButton2, "/resources/Criquet.png");
         setButtonImage(jButton3, "/resources/Araignee.png");
-        setButtonImage(jButton4, "/resources/Scarabee.png");
-        setButtonImage(jButton5, "/resources/Abeille.png");
+        setButtonImage(jButton4, "/resources/Scarabe.png");
+
     }
 
-    // -----------------------------
-    // 3. Désactiver les skins pris
-    // -----------------------------
+
     private void checkAvailability() {
-        jButton1.setEnabled(isSkinAvailable("Mante Religieuse Vicieuse"));
+        jButton1.setEnabled(isSkinAvailable("Mante Religieuse Tueuse"));
         jButton2.setEnabled(isSkinAvailable("Criquet Suspect"));
         jButton3.setEnabled(isSkinAvailable("Araignee Sans Pitie"));
         jButton4.setEnabled(isSkinAvailable("Scarabee Mal Fame"));
-        jButton5.setEnabled(isSkinAvailable("Abeille Cruelle"));
-    }
 
-    // -----------------------------
-    // 4. Actions des boutons
-    // -----------------------------
+    }
+    
+    private ActionListener choose(final String skin) {
+        return new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent evt) {
+            selectSkin(skin);
+        }
+    };
+}
+
     private void setupListeners() {
-        jButton1.addActionListener(e -> selectSkin("Mante Religieuse Vicieuse"));
-        jButton2.addActionListener(e -> selectSkin("Criquet Suspect"));
-        jButton3.addActionListener(e -> selectSkin("Araignee Sans Pitie"));
-        jButton4.addActionListener(e -> selectSkin("Scarabee Mal Fame"));
-        jButton5.addActionListener(e -> selectSkin("Abeille Cruelle"));
+        jButton1.addActionListener(choose("Mante Religieuse Tueuse"));
+        jButton2.addActionListener(choose("Criquet Suspect"));
+        jButton3.addActionListener(choose("Araignee Sans Pitie"));
+        jButton4.addActionListener(choose("Scarabee Mal Fame"));
     }
-
+    
     private void selectSkin(String skinName) {
         JOptionPane.showMessageDialog(this, "Tu as choisi : " + skinName);
+        
 
         try {
             Connection connexion = DriverManager.getConnection(
@@ -120,16 +157,25 @@ public class Skin extends javax.swing.JFrame {
 
             // Marquer le skin comme pris
             PreparedStatement update = connexion.prepareStatement(
-                "UPDATE skins SET available = 0 WHERE name = ?"
+                "UPDATE Characters SET Disponibilité = 0 WHERE nom = ?"
             );
             update.setString(1, skinName);
             update.executeUpdate();
+            int skinId = getSkinId(skinName);
 
+            // 3) Mettre à jour la table Character (celle de ton screenshot)
+            PreparedStatement updatePlayer = connexion.prepareStatement(
+                "UPDATE character SET skin = ? WHERE id = ?"
+            );
+            updatePlayer.setInt(1, skinId);
+            updatePlayer.setInt(2, player.getId()); // ton joueur actuel
+            updatePlayer.executeUpdate();
             connexion.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        
 
         // Ouvrir la salle d'attente
         new Lobby(player).setVisible(true);
@@ -155,7 +201,6 @@ public class Skin extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -167,6 +212,11 @@ public class Skin extends javax.swing.JFrame {
         jButton2.setText("jButton2");
 
         jButton3.setText("jButton3");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         jButton4.setText("jButton4");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
@@ -175,42 +225,42 @@ public class Skin extends javax.swing.JFrame {
             }
         });
 
-        jButton5.setText("jButton5");
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(96, Short.MAX_VALUE)
+                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(27, 27, 27)
+                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(26, 26, 26)
+                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(29, 29, 29)
+                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(150, 150, 150))
             .addGroup(layout.createSequentialGroup()
-                .addGap(77, 77, 77)
+                .addGap(107, 107, 107)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap(29, Short.MAX_VALUE)
-                .addComponent(jButton5)
-                .addGap(18, 18, 18)
-                .addComponent(jButton4)
-                .addGap(18, 18, 18)
-                .addComponent(jButton1)
-                .addGap(18, 18, 18)
-                .addComponent(jButton2)
-                .addGap(18, 18, 18)
-                .addComponent(jButton3)
-                .addGap(21, 21, 21))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(32, 32, 32)
+                .addGap(28, 28, 28)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, 162, Short.MAX_VALUE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(62, 62, 62))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGap(108, 108, 108)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap(157, Short.MAX_VALUE))
         );
 
         pack();
@@ -219,6 +269,10 @@ public class Skin extends javax.swing.JFrame {
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -251,7 +305,6 @@ public class Skin extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
 }
