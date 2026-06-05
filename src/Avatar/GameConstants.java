@@ -29,6 +29,8 @@ public final class GameConstants {
     public static final double HIVE_SIZE = 96.0;
     public static final double SPAWN_ZONE_SIZE = 96.0;
 
+
+    // TO MODIFY 
     public static final double[][] MONSTER_SPAWNS = {
         {384.0, 288.0},
         {160.0, 160.0},

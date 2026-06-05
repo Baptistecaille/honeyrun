@@ -22,8 +22,8 @@ public class Player extends Avatar {
     private final Hitbox hiveZone, spawnZone;
     private final ArrayList<Monsters> monsters;
 
-    // GameConstants est appelé pour unifier les valeurs utilisées dans le code.
-    // GameConstants est un fichier dans le dossier Avatar
+    // GameConstants est un fichier qui contient toutes les variables importantes du jeu
+    private double boundsMinX = 0, boundsMinY = 0;
     private double boundsMaxX = GameConstants.SCREEN_WIDTH, boundsMaxY = GameConstants.SCREEN_HEIGHT;
 
 
