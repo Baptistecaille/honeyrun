@@ -3,13 +3,28 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Accueil.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/FenetreDeJeu.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Skin.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/Jeu.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Avatar/Monsters.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/BackgroundPanel.java</file>
-            <file>file://HERMES/EDU$/cpoussie/Documents/GitHub/honeyrun/src/Interface/Lobby.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/backup_avatar/Jeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/Jeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/Player.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/Avatar.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/FenetreDeJeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/backup_avatar/FenetreDeJeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Tools/Hitbox.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/Carte.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/Calque21920.txt</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/Monsters.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/Jeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/Honey%20Run%20try1.txt</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/FenetreDeJeu.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Tools/Coordinates.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/TileMapping/Calque31920.txt</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/backup_avatar/Player.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Interface/Player.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/multiplayer/DonneesJoueur.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/multiplayer/DonneesMonstre.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/multiplayer/GestionnaireJoueurs.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/GameConstants.java</file>
+            <file>file://HERMES/EDU$/alamas/Documents/mu2/info/honeyrun/src/Avatar/Honey.java</file>
         </group>
     </open-files>
 </project-private>

@@ -34,6 +34,7 @@ public class Jeu {
     protected BufferedImage decor;
     protected int score;
     protected Player player;
+    protected Honey honey;
     private ArrayList<Monsters> monsters;
     private Carte calque1;
     private Carte calque2;
@@ -60,6 +61,7 @@ public class Jeu {
     public Jeu(double playerSpawnX, double playerSpawnY, String playerName) {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
+        this.honey =new Honey();
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
         this.minimap = this.calque2.genererImageMiniMap(300, 225);
         this.score = 0;
@@ -146,7 +148,14 @@ public class Jeu {
             (int)(player.getHitbox().getWidth()  * MAP_ZOOM),
             (int)(player.getHitbox().getHeight() * MAP_ZOOM));
         renduMiniMap(contexte, largeurEcran, hauteurEcran);
-
+        if (!this.player.hasHoney()){
+            this.honey.setX(worldToScreenX(GameConstants.HIVE_X)); 
+            this.honey.setY(worldToScreenY(GameConstants.HIVE_Y));}
+        else {
+            this.honey.setX(GameConstants.LOCAL_PLAYER_SCREEN_X + GameConstants.PLAYER_SIZE );
+            this.honey.setY(GameConstants.LOCAL_PLAYER_SCREEN_Y - GameConstants.PLAYER_SIZE/2);   
+        }
+        this.honey.rendu(contexte);
     }
 
     public int worldToScreenX(double worldX) {
@@ -179,8 +188,14 @@ public class Jeu {
         // Le mouvement du joueur est géré par son thread interne (startMovement)
         this.calque1.miseAJour();
         this.calque2.miseAJour();
+        if (this.player.hasHoney()){
+            this.honey.miseAJourMini();}
+        else{
+            this.honey.miseAJourMaxi();
+                    }
         //this.calque3.miseAJour();
     }
+   
 
     public Player getPlayer() {
         return this.player;

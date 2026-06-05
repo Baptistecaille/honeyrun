@@ -20,8 +20,8 @@ import javax.swing.JOptionPane;
 public class GestionnaireJoueurs {
 
     // Coordonnées de spawn fixes par numéro d'avatar 60x34 tuiles (1920x1088 pixels)
-    private static final double[] SPAWN_X = {20, 744, 20,  744}; // to modify accoording to the map area
-    private static final double[] SPAWN_Y = {20, 20,  544, 544}; // to modify accoording to the map area
+    private static final double[] SPAWN_X = {95, 1825, 95,  1825}; // to modify accoording to the map area
+    private static final double[] SPAWN_Y = {95, 95,  993, 993}; // to modify accoording to the map area
 
     private final Connection connexion;
 

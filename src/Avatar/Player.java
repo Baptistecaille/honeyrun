@@ -102,27 +102,6 @@ public class Player extends Avatar {
     }
 
 
-//    public void miseAJour2(double dt) {
-//        
-//        double newX, newY;
-//        synchronized (position) {
-//            newX = position.getX();
-//            newY = position.getY();
-//        }
-//
-//        if (this.toucheGauche)  newX -= this.speed * dt;
-//        if (this.toucheDroite)  newX += this.speed * dt;
-//        if (this.toucheBas)     newY += this.speed * dt;
-//        if (this.toucheHaut)    newY -= this.speed * dt;
-//
-//        newX = Math.max(boundsMinX, Math.min(boundsMaxX, newX));
-//        newY = Math.max(boundsMinY, Math.min(boundsMaxY, newY));
-//
-//        synchronized (position) {
-//            position.setX(newX);
-//            position.setY(newY);
-//        }
-//    }
     
     public void miseAJour(double dt) {
         if (this.toucheGauche){
