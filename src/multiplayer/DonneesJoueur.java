@@ -4,6 +4,7 @@ import java.awt.Color;
 
 public class DonneesJoueur {
 
+    // si pas d'image pour avatar
     public static final Color[] COULEURS = {
         null,         // index 0 inutilisé
         Color.RED,    // 1 — Rouge

@@ -4,33 +4,32 @@
  */
 package Avatar;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.Color;
 
 import javax.imageio.ImageIO;
 
 import TileMapping.Carte;
 import Tools.Coordinates;
 import Tools.Hitbox;
+import multiplayer.DonneesJoueur;
 
 /**
  *
- * @author alamas
+ * @author alamas, cpoussie, bcaillerie, elehec
  */
 public class Jeu {
 
-    public static final int TILE_SIZE = 32;
-    public static final int MAP_ZOOM = 3;
-    public static final int CAMERA_OFFSET_TILES_X = 10;
-    public static final int CAMERA_OFFSET_TILES_Y = 5;
-    private static final double MONSTER_SPEED = 32.0;
-    private static final double MONSTER_SIZE = 32.0;
+    public static final int TILE_SIZE = GameConstants.TILE_SIZE;
+    public static final int MAP_ZOOM = GameConstants.MAP_ZOOM;
+    public static final int CAMERA_OFFSET_TILES_X = GameConstants.CAMERA_OFFSET_TILES_X;
+    public static final int CAMERA_OFFSET_TILES_Y = GameConstants.CAMERA_OFFSET_TILES_Y;
 
     protected BufferedImage decor;
     protected int score;
@@ -69,23 +68,24 @@ public class Jeu {
         BufferedImage sprite = chargerSprite();
 
         this.monsters = new ArrayList<>();
-        double[][] monsterSpawns = {{384, 288}, {160, 160}, {608, 416}};
+        double[][] monsterSpawns = GameConstants.MONSTER_SPAWNS;
         for (double[] s : monsterSpawns) {
-            Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), MONSTER_SIZE, MONSTER_SIZE);
-            Monsters m = new Monsters(s[0], s[1], MONSTER_SPEED, mHitbox);
-            m.setMovementBounds(0, 0, 1920 - MONSTER_SIZE, 1088 - MONSTER_SIZE);
+            Hitbox mHitbox = new Hitbox(new Coordinates(s[0], s[1]), GameConstants.MONSTER_SIZE, GameConstants.MONSTER_SIZE);
+            Monsters m = new Monsters(s[0], s[1], GameConstants.MONSTER_SPEED, mHitbox);
+            m.setChaseSpeed(GameConstants.MONSTER_CHASE_SPEED);
+            m.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - GameConstants.MONSTER_SIZE, GameConstants.SCREEN_HEIGHT - GameConstants.MONSTER_SIZE);
             m.startMovement();
             m.setColor(Color.BLACK);
             this.monsters.add(m);
         }
 
-        Hitbox hiveZone = new Hitbox(new Coordinates(912, 496), 96, 96);
-        Hitbox spawnZone = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), 96, 96);
+        Hitbox hiveZone = new Hitbox(new Coordinates(GameConstants.HIVE_X, GameConstants.HIVE_Y), GameConstants.HIVE_SIZE, GameConstants.HIVE_SIZE);
+        Hitbox spawnZone = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), GameConstants.SPAWN_ZONE_SIZE, GameConstants.SPAWN_ZONE_SIZE);
 
-        Hitbox playerHitbox = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), 32.0, 32.0);
-        Player P1 = new Player(playerSpawnX, playerSpawnY, 200, playerHitbox, hiveZone, spawnZone, this.monsters, playerName);
+        Hitbox playerHitbox = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
+        Player P1 = new Player(playerSpawnX, playerSpawnY, GameConstants.PLAYER_SPEED, playerHitbox, hiveZone, spawnZone, this.monsters, playerName);
         P1.setImage(sprite);
-        P1.setMovementBounds(0, 0, 1920 - playerHitbox.getWidth(), 1088 - playerHitbox.getHeight());
+        P1.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - playerHitbox.getWidth(), GameConstants.SCREEN_HEIGHT - playerHitbox.getHeight());
         P1.startMovement();
         this.player = P1;
     }
@@ -97,7 +97,7 @@ public class Jeu {
             if (resource != null) {
                 BufferedImage sprite = ImageIO.read(resource);
                 if (sprite != null) {
-                    return redimensionner(sprite, 96, 96);
+                    return redimensionner(sprite, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
                 }
             }
 
@@ -106,17 +106,17 @@ public class Jeu {
             if (fallback.exists()) {
                 BufferedImage sprite = ImageIO.read(fallback);
                 if (sprite != null) {
-                    return redimensionner(sprite, 96, 96);
+                    return redimensionner(sprite, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
                 }
             }
         } catch (IOException ex) {
             Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        BufferedImage placeholder = new BufferedImage(96, 96, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage placeholder = new BufferedImage(GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = placeholder.createGraphics();
         g2d.setColor(Color.MAGENTA);
-        g2d.fillRect(0, 0, 96, 96);
+        g2d.fillRect(0, 0, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
         g2d.dispose();
         return placeholder;
     }
@@ -134,7 +134,7 @@ public class Jeu {
 
         double a = this.player.getPosition().getX();
         double b = this.player.getPosition().getY();
-        int Xp = (int) (a / (double) TILE_SIZE) ;               //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient
+        int Xp = (int) (a / (double) TILE_SIZE) ; //On passe n en double pour pouvoir diviser a et on récupère un int pour avoir le quotient
         int Yp = (int)(b / (double) TILE_SIZE) ;
         this.calque1.rendu(contexte, Xp, Yp); // dessiné en premier (fond)
         this.calque2.rendu(contexte, Xp, Yp); // 2 ème calque
@@ -170,7 +170,7 @@ public class Jeu {
             int y = worldToScreenY(monster.getY());
             int w = (int) Math.round(monster.getHitbox().getWidth());
             int h = (int) Math.round(monster.getHitbox().getHeight());
-            contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK);
+            contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK); // Si la couleur du monstre n'est pas définie, on utilise le noir par défaut.
             contexte.fillRect(x, y, w * MAP_ZOOM, h * MAP_ZOOM);
         }
     }
@@ -184,6 +184,15 @@ public class Jeu {
 
     public Player getPlayer() {
         return this.player;
+    }
+
+    public void mettreAJourJoueursPourMonstres(ArrayList<DonneesJoueur> joueurs) {
+        ArrayList<DonneesJoueur> snapshot = joueurs != null ? new ArrayList<>(joueurs) : new ArrayList<>(); // si la liste de joueurs est null, on en crée une vide pour éviter les NullPointerException
+        if (monsters != null) {
+            for (Monsters monster : monsters) {
+                monster.setJoueurs(snapshot);
+            }
+        }
     }
 
     public void stopMonstres() {

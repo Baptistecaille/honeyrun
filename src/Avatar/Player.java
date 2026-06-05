@@ -1,10 +1,13 @@
 package Avatar;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
+
 import Tools.Coordinates;
 import Tools.Hitbox;
-import java.awt.Graphics2D;
 
 public class Player extends Avatar {
+    private static final double TILE_SIZE = GameConstants.TILE_SIZE;
+
     // Ces drapeaux sont lus par un thread de mouvement et ecrits par Swing, donc ils doivent etre visibles partout.
     private volatile boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
 
@@ -19,8 +22,9 @@ public class Player extends Avatar {
     private final Hitbox hiveZone, spawnZone;
     private final ArrayList<Monsters> monsters;
 
-    private double boundsMinX = 0, boundsMinY = 0;
-    private double boundsMaxX = 1920, boundsMaxY = 1088;
+    // GameConstants est appelé pour unifier les valeurs utilisées dans le code.
+    // GameConstants est un fichier dans le dossier Avatar
+    private double boundsMaxX = GameConstants.SCREEN_WIDTH, boundsMaxY = GameConstants.SCREEN_HEIGHT;
 
 
     private volatile boolean running = false;
@@ -47,7 +51,7 @@ public class Player extends Avatar {
         this.name = name;
         this.hiveZone = hiveZone;
         this.spawnZone = spawnZone;
-        this.monsters = monsters != null ? monsters : new ArrayList<>();
+        this.monsters = monsters != null ? monsters : new ArrayList<>(); // si la liste de monstres est null, on en crée une vide pour éviter les NullPointerException
         this.toucheGauche = false; 
         this.toucheDroite = false;
         this.toucheBas = false;
@@ -83,9 +87,9 @@ public class Player extends Avatar {
 
         movementThread.start();
     }
-    
+    // on utilise les variables qui sont dans GameConstants.java pour unifier le code. 
      public void rendu(Graphics2D contexte, int displayWidth, int displayHeight) {
-        contexte.drawImage(this.getImage(), 960, 480, displayWidth, displayHeight, null);
+        contexte.drawImage(this.getImage(), GameConstants.LOCAL_PLAYER_SCREEN_X, GameConstants.LOCAL_PLAYER_SCREEN_Y, displayWidth, displayHeight, null);
     }
 
     @Override
@@ -123,32 +127,32 @@ public class Player extends Avatar {
     public void miseAJour(double dt) {
         if (this.toucheGauche){
             double x = this.getPosition().getX();
-            x-= (1*this.speed * dt);
+            x-= (1*this.speed * TILE_SIZE * dt);
             this.position.setX(x);
         }
         if (this.toucheDroite){
             double x = this.getPosition().getX();
-            x+= (1*this.speed * dt);
+            x+= (1*this.speed * TILE_SIZE * dt);
             this.position.setX(x);
         }
         if (this.toucheBas){
             double y = this.getPosition().getY();
-            y+= (1*this.speed * dt);
+            y+= (1*this.speed * TILE_SIZE * dt);
             this.position.setY(y);
         }
         if (this.toucheHaut){
             double y = this.getPosition().getY();
-            y-= (1*this.speed * dt);
+            y-= (1*this.speed * TILE_SIZE * dt);
             this.position.setY(y);
         }
-        if (this.getPosition().getX()> 1920 - 32){// collision avec le bord droit de la scene, taille de la hitbox
-            this.position.setX( 1920 - 32);
+        if (this.getPosition().getX()> GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE){// collision avec le bord droit de la scene, taille de la hitbox
+            this.position.setX( GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE);
         }
         if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
             this.position.setX(0);
         }   
-        if(this.getPosition().getY()> 1088 - 32){  // collision avec le bord bas de la scene
-            this.position.setY(1088 - 32);
+        if(this.getPosition().getY()> GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE){  // collision avec le bord bas de la scene
+            this.position.setY(GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE);
         }
         if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
             this.position.setY(0); 
@@ -221,6 +225,7 @@ public class Player extends Avatar {
         }
     }
 
+    //fonction interne qui calcule si deux hitbox se chevauchent
     private boolean overlaps(Hitbox a, Hitbox b) {
         return a.getX() < b.getX() + b.getWidth()
             && a.getX() + a.getWidth() > b.getX()

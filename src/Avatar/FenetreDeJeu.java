@@ -13,14 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List; // for mapping avatar types to sprites
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean; // for logging
-import java.util.concurrent.atomic.AtomicReference; // for logging
-import java.util.logging.Level; // used for thread-safe boolean flag
-import java.util.logging.Logger; // used for thread-safe reference to the list of other players
-
+import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -46,16 +39,16 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private Timer timer;
     private GestionnaireJoueurs gestionnaire;
     private int joueurId;
-    private AtomicBoolean partieFinie;
-    private AtomicReference<List<DonneesJoueur>> autresJoueurs;
-    private Map<Integer, BufferedImage> spritesParSkin;
+    private volatile boolean partieFinie;
+    private volatile ArrayList<DonneesJoueur> autresJoueurs;
+    private BufferedImage[] spritesParSkin;
 
     public FenetreDeJeu(DonneesJoueur moi, GestionnaireJoueurs gestionnaire) {
-        this.setSize(1920, 1088);
+        this.setSize(GameConstants.SCREEN_WIDTH, GameConstants.SCREEN_HEIGHT);
         this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.jLabel1 = new JLabel();
-        this.jLabel1.setPreferredSize(new java.awt.Dimension(1920, 1088));
+        this.jLabel1.setPreferredSize(new java.awt.Dimension(GameConstants.SCREEN_WIDTH, GameConstants.SCREEN_HEIGHT));
         this.setContentPane(this.jLabel1);
         this.pack();
         this.setFocusable(true);
@@ -69,8 +62,8 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
         this.gestionnaire = gestionnaire;
         this.joueurId = moi.id;
-        this.partieFinie = new AtomicBoolean(false);
-        this.autresJoueurs = new AtomicReference<>(java.util.Collections.emptyList());
+        this.partieFinie = false;
+        this.autresJoueurs = new ArrayList<>();
         this.spritesParSkin = chargerSpritesJoueurs();
 
         this.addWindowListener(new WindowAdapter() {
@@ -80,11 +73,16 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
             }
         });
 
-        this.timer = new Timer(40, this);
+        this.timer = new Timer(GameConstants.RENDER_TIMER_DELAY_MS, this);
         this.timer.start();
 
         this.addKeyListener(this);
-        SwingUtilities.invokeLater(this::requestFocusInWindow);
+        SwingUtilities.invokeLater(new Runnable() { // Runnable sert à différer l'exécution du code jusqu'à ce que la fenêtre soit affichée, pour que requestFocusInWindow fonctionne.
+            @Override
+            public void run() {
+                requestFocusInWindow();
+            }
+        });
 
         demarrerThreadSync();
     }
@@ -99,30 +97,38 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         return out;
     }
 
-    private Map<Integer, BufferedImage> chargerSpritesJoueurs() {
+    private BufferedImage[] chargerSpritesJoueurs() {
         String[] noms = {null, "Abeille", "Araignee", "Criquet", "Scarabe"};
-        Map<Integer, BufferedImage> map = new HashMap<>();
+        BufferedImage[] sprites = new BufferedImage[5];
+
         for (int skin = 1; skin <= 4; skin++) {
             try {
-                var resource = getClass().getResource("/resources/" + noms[skin] + ".png");
+                java.net.URL resource = getClass().getResource("/resources/" + noms[skin] + ".png");
                 if (resource != null) {
                     BufferedImage img = ImageIO.read(resource);
-                    if (img != null) { map.put(skin, redimensionner(img, 96, 96)); continue; }
+                    if (img != null) {
+                        sprites[skin] = redimensionner(img, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+                        continue;
+                    }
                 }
+
                 File fallback = new File("src/resources/" + noms[skin] + ".png");
                 if (fallback.exists()) {
                     BufferedImage img = ImageIO.read(fallback);
-                    if (img != null) { map.put(skin, redimensionner(img, 96, 96)); }
+                    if (img != null) {
+                        sprites[skin] = redimensionner(img, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+                    }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(FenetreDeJeu.class.getName()).log(Level.SEVERE, null, ex); // Get log if image loading fails
+                ex.printStackTrace();
             }
         }
-        return map;
+
+        return sprites;
     }
 
     private void arreter() {
-        partieFinie.set(true);
+        partieFinie = true;
         jeu.stopMonstres();
         jeu.getPlayer().stopMovement();
         try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
@@ -130,65 +136,113 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         System.exit(0);
     }
 
+    private synchronized boolean marquerPartieFinie() {
+        if (partieFinie) {
+            return false;
+        }
+        partieFinie = true;
+        return true;
+    }
+
+    private DonneesJoueur creerDonneesJoueurLocal() {
+        Player player = jeu.getPlayer();
+        return new DonneesJoueur(
+            joueurId,
+            player.getName(),
+            player.getX(),
+            player.getY(),
+            player.getSpawn().getX(),
+            player.getSpawn().getY(),
+            0,
+            player.hasHoney(),
+            player.isWon(),
+            player.getLives()
+        );
+    }
+
     private void demarrerThreadSync() {
-        new Thread(() -> {
-            while (!partieFinie.get()) {
-                try {
-                    gestionnaire.mettreAJourPosition(
-                        joueurId,
-                        jeu.getPlayer().getX(),
-                        jeu.getPlayer().getY(),
-                        jeu.getPlayer().hasHoney(),
-                        jeu.getPlayer().getLives()
-                    );
-                    autresJoueurs.set(gestionnaire.lireTousLesJoueurs());
+        new Thread(new Runnable() { // Runnable permet de définir le code à exécuter dans le thread sans avoir à créer une classe séparée.
+            @Override
+            public void run() {
+                while (!partieFinie) {
+                    try {
+                        gestionnaire.mettreAJourPosition(
+                            joueurId,
+                            jeu.getPlayer().getX(),
+                            jeu.getPlayer().getY(),
+                            jeu.getPlayer().hasHoney(),
+                            jeu.getPlayer().getLives()
+                        );
+                        ArrayList<DonneesJoueur> joueursSynchronises = new ArrayList<>(gestionnaire.lireTousLesJoueurs());
+                        autresJoueurs = joueursSynchronises;
 
-                    if (jeu.getPlayer().isWon() && partieFinie.compareAndSet(false, true)) {
-                        gestionnaire.signalerVictoire(joueurId);
-                        gestionnaire.deconnecter(joueurId);
-                        gestionnaire.reinitialiser();
-                        SwingUtilities.invokeLater(() -> {
-                            JOptionPane.showMessageDialog(FenetreDeJeu.this, "Vous avez gagné !");
-                            arreter();
-                        });
-                    }
+                        ArrayList<DonneesJoueur> joueursPourMonstres = new ArrayList<>();
+                        for (int i = 0; i < joueursSynchronises.size(); i++) {
+                            DonneesJoueur joueur = joueursSynchronises.get(i);
+                            if (joueur.id != joueurId) {
+                                joueursPourMonstres.add(joueur);
+                            }
+                        }
+                        joueursPourMonstres.add(creerDonneesJoueurLocal());
+                        jeu.mettreAJourJoueursPourMonstres(joueursPourMonstres);
 
-                    if (!partieFinie.get()) {
-                        String gagnant = gestionnaire.detecterVictoire();
-                        if (gagnant != null && partieFinie.compareAndSet(false, true)) {
+                        if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
+                            gestionnaire.signalerVictoire(joueurId);
                             gestionnaire.deconnecter(joueurId);
                             gestionnaire.reinitialiser();
-                            SwingUtilities.invokeLater(() -> {
-                                JOptionPane.showMessageDialog(FenetreDeJeu.this, gagnant + " a gagné !");
-                                arreter();
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    JOptionPane.showMessageDialog(FenetreDeJeu.this, "Vous avez gagné !");
+                                    arreter();
+                                }
                             });
                         }
-                    }
 
-                    Thread.sleep(16);
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                        if (!partieFinie) {
+                            String gagnant = gestionnaire.detecterVictoire();
+                            if (gagnant != null && marquerPartieFinie()) {
+                                final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
+                                gestionnaire.deconnecter(joueurId);
+                                gestionnaire.reinitialiser();
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        JOptionPane.showMessageDialog(FenetreDeJeu.this, nomGagnant + " a gagné !");
+                                        arreter();
+                                    }
+                                });
+                            }
+                        }
+
+                        Thread.sleep(16); // ~60 FPS
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
         }, "db-sync").start();
     }
 
     private void rendreAutresJoueurs() {
-        List<DonneesJoueur> joueurs = autresJoueurs.get();
+        ArrayList<DonneesJoueur> joueurs = autresJoueurs;
         contexte.setFont(new Font("SansSerif", Font.BOLD, 12));
         for (DonneesJoueur j : joueurs) {
             if (j.id == joueurId) continue;
             int screenX = jeu.worldToScreenX(j.x);
             int screenY = jeu.worldToScreenY(j.y);
-            BufferedImage sprite = spritesParSkin.get(j.avatar);
+            BufferedImage sprite = null;
+            if (j.avatar >= 1 && j.avatar < spritesParSkin.length) {
+                sprite = spritesParSkin[j.avatar];
+            }
             if (sprite != null) {
-                contexte.drawImage(sprite, screenX, screenY, 96, 96, null);
+                contexte.drawImage(sprite, screenX, screenY, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE, null);
             } else {
                 contexte.setColor(Color.MAGENTA);
-                contexte.fillRect(screenX, screenY, 96, 96);
+                contexte.fillRect(screenX, screenY, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
             }
             if (j.nom != null) {
                 contexte.setColor(Color.BLACK);
@@ -224,9 +278,12 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
         final DonneesJoueur joueur = moi;
         final GestionnaireJoueurs g = gestionnaire;
-        SwingUtilities.invokeLater(() -> {
-            FenetreDeJeu fenetre = new FenetreDeJeu(joueur, g);
-            fenetre.setVisible(true);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FenetreDeJeu fenetre = new FenetreDeJeu(joueur, g);
+                fenetre.setVisible(true);
+            }
         });
     }
 
