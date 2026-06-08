@@ -14,7 +14,7 @@ public final class GameConstants {
 
     public static final double PLAYER_SPEED = 6.0;
     public static final double MONSTER_SPEED = 1.0;
-    public static final double MONSTER_CHASE_SPEED = 3.0;
+    public static final double MONSTER_CHASE_SPEED = 2.0;
 
     public static final double PLAYER_SIZE = 32.0;
     public static final double MONSTER_SIZE = 32.0;

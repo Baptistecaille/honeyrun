@@ -189,6 +189,44 @@ public class Monsters extends Avatar {
             nextY = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), nextY));
 
             if (isMurAt(nextX, nextY)) {
+                // La direction principale est bloquée par un mur.
+                // On calcule les deux directions perpendiculaires pour contourner l'obstacle.
+                // Si le monstre allait horizontalement, on essaie vertical (et inversement).
+                // La première alternative (p1) est celle qui rapproche le plus de la cible sur l'axe opposé.
+                double p1x, p1y;
+                if (dirX != 0) {
+                    // Mouvement horizontal bloqué → essayer vertical
+                    // p1 va vers la cible en y, p2 dans le sens opposé
+                    p1x = 0; p1y = dy >= 0 ? 1 : -1;
+                } else {
+                    // Mouvement vertical bloqué → essayer horizontal
+                    // p1 va vers la cible en x, p2 dans le sens opposé
+                    p1x = dx >= 0 ? 1 : -1; p1y = 0;
+                }
+                // p2 est l'opposé de p1 (l'autre côté)
+                double p2x = -p1x; double p2y = -p1y;
+
+                // On calcule les positions candidates en respectant les limites de déplacement
+                double c1x = Math.max(minBounds.getX(), Math.min(maxBounds.getX(), position.getX() + p1x * TILE_SIZE));
+                double c1y = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), position.getY() + p1y * TILE_SIZE));
+                double c2x = Math.max(minBounds.getX(), Math.min(maxBounds.getX(), position.getX() + p2x * TILE_SIZE));
+                double c2y = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), position.getY() + p2y * TILE_SIZE));
+
+                // On tente la première alternative (la plus proche de la cible sur l'axe perpendiculaire)
+                if (!isMurAt(c1x, c1y)) {
+                    position.setX(c1x); position.setY(c1y);
+                    heading.setX(p1x); heading.setY(p1y);
+                    velocity.setX(p1x * TILE_SIZE); velocity.setY(p1y * TILE_SIZE);
+                    return;
+                }
+                // Si elle est aussi bloquée, on tente l'autre côté
+                if (!isMurAt(c2x, c2y)) {
+                    position.setX(c2x); position.setY(c2y);
+                    heading.setX(p2x); heading.setY(p2y);
+                    velocity.setX(p2x * TILE_SIZE); velocity.setY(p2y * TILE_SIZE);
+                    return;
+                }
+                // Toutes les alternatives sont bloquées : le monstre reste sur place ce tick
                 velocity.setX(0);
                 velocity.setY(0);
                 return;
