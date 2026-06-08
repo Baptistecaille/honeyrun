@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Random;
 
+import TileMapping.CollisionMap;
 import Tools.Coordinates;
 import Tools.Hitbox;
 import multiplayer.DonneesJoueur;
@@ -30,6 +31,7 @@ public class Monsters extends Avatar {
 
     // init de random pour les délpacements aléatoires.
     private final Random random = new Random();
+    private CollisionMap collisionMap;
 
     public Monsters(double x, double y, double speed, Hitbox hitbox) {
         super(new Coordinates(snapToTileValue(x), snapToTileValue(y)), null, speed, hitbox);
@@ -90,7 +92,10 @@ public class Monsters extends Avatar {
         }
 
         stepAccumulator += dt;
-        double secondsPerTile = 1.0 / speed; // le temps en secondes pour parcourir une tuile a la vitesse actuelle
+        int cmCol = (int)(position.getX() / TILE_SIZE);
+        int cmRow = (int)(position.getY() / TILE_SIZE);
+        double factor = (collisionMap != null) ? collisionMap.getSpeedFactor(cmCol, cmRow) : 1.0;
+        double secondsPerTile = 1.0 / (speed * factor);
 
         // Si le monstre n'a pas encore parcouru une tuile complète, on ne change pas de direction.
         if (stepAccumulator < secondsPerTile) {
@@ -141,7 +146,10 @@ public class Monsters extends Avatar {
         stepAccumulator += dt;
 
         // Si le monstre n'a pas encore parcouru une tuile complète à la vitesse de poursuite, on continue dans la même direction.
-        double secondsPerTile = 1.0 / speedTiles;
+        int cmCol = (int)(position.getX() / TILE_SIZE);
+        int cmRow = (int)(position.getY() / TILE_SIZE);
+        double factor = (collisionMap != null) ? collisionMap.getSpeedFactor(cmCol, cmRow) : 1.0;
+        double secondsPerTile = 1.0 / (speedTiles * factor);
         if (stepAccumulator < secondsPerTile) {
             velocity.setX(0);
             velocity.setY(0);
@@ -180,6 +188,12 @@ public class Monsters extends Avatar {
             nextX = Math.max(minBounds.getX(), Math.min(maxBounds.getX(), nextX));
             nextY = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), nextY));
 
+            if (isMurAt(nextX, nextY)) {
+                velocity.setX(0);
+                velocity.setY(0);
+                return;
+            }
+
             // Mise à jour de la position, de la direction et de la vitesse du monstre.
             position.setX(nextX);
             position.setY(nextY);
@@ -199,6 +213,11 @@ public class Monsters extends Avatar {
         }
     }
 
+
+    private boolean isMurAt(double worldX, double worldY) {
+        if (collisionMap == null) return false;
+        return collisionMap.isMur((int)(worldX / TILE_SIZE), (int)(worldY / TILE_SIZE));
+    }
 
     private void chooseRandomDirection() {
 
@@ -221,7 +240,8 @@ public class Monsters extends Avatar {
             if (nextX >= minBounds.getX()
                     && nextX <= maxBounds.getX()
                     && nextY >= minBounds.getY()
-                    && nextY <= maxBounds.getY()) {
+                    && nextY <= maxBounds.getY()
+                    && !isMurAt(nextX, nextY)) {
                 //Si elle est valide, on met à jour la position, la direction et la vitesse du monstre, puis on sort de la boucle.
                 position.setX(nextX);
                 position.setY(nextY);
@@ -272,6 +292,10 @@ public class Monsters extends Avatar {
     public void setMovementBounds(double minX, double minY, double maxX, double maxY) {
         this.minBounds = new Coordinates(minX, minY);
         this.maxBounds = new Coordinates(Math.max(minX, maxX), Math.max(minY, maxY));
+    }
+
+    public void setCollisionMap(CollisionMap collisionMap) {
+        this.collisionMap = collisionMap;
     }
 
     private double snapToTile(double value) {

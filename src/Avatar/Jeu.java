@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 import TileMapping.Carte;
+import TileMapping.CollisionMap;
 import Tools.Coordinates;
 import Tools.Hitbox;
 import multiplayer.DonneesJoueur;
@@ -62,6 +63,7 @@ public class Jeu {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
         this.honey =new Honey();
+        CollisionMap collisionMap = new CollisionMap("src/TileMapping/Calque111920_1.txt");
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
         this.minimap = this.calque2.genererImageMiniMap(300, 225);
         this.score = 0;
@@ -77,6 +79,7 @@ public class Jeu {
             m.setChaseSpeed(GameConstants.MONSTER_CHASE_SPEED);
             m.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - GameConstants.MONSTER_SIZE, GameConstants.SCREEN_HEIGHT - GameConstants.MONSTER_SIZE);
             m.startMovement();
+            m.setCollisionMap(collisionMap);
             m.setColor(Color.BLACK);
             this.monsters.add(m);
         }
