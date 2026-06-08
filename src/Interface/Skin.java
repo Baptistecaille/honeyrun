@@ -6,12 +6,14 @@ package Interface;
 
 
 
+import java.awt.Font;
 import java.awt.Image;
 import java.sql.*;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 public class Skin extends javax.swing.JFrame {
 
@@ -22,7 +24,16 @@ public class Skin extends javax.swing.JFrame {
         setContentPane(new BackgroundPanel("Z:/Documents/GitHub/honeyrun/src/Interface/honey_background.png"));
         initComponents();
         setLocationRelativeTo(null);
-
+        Font luckiestBase = null;
+        try {
+            luckiestBase = Font.createFont(
+                Font.TRUETYPE_FONT,
+                new File("src/Interface/luckiest-guy/luckiestguy.ttf")
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        jLabel1.setFont(luckiestBase.deriveFont(38f));
         loadSkinButtons();
         checkAvailability();
         setupListeners();
@@ -112,19 +123,19 @@ public class Skin extends javax.swing.JFrame {
     }
 
     private void loadSkinButtons() {
-        setButtonImage(jButton1, "/resources/Mantereligieuse.png");
-        setButtonImage(jButton2, "/resources/Criquet.png");
-        setButtonImage(jButton3, "/resources/Araignee.png");
-        setButtonImage(jButton4, "/resources/Scarabe.png");
+        setButtonImage(jButton1, "/resources/Araignee.png");
+        setButtonImage(jButton2, "/resources/Mantereligieuse.png");
+        setButtonImage(jButton3, "/resources/Scarabe.png");
+        setButtonImage(jButton4, "/resources/Criquet.png");
 
     }
 
 
     private void checkAvailability() {
-        jButton1.setEnabled(isSkinAvailable("Mante Religieuse Tueuse"));
-        jButton2.setEnabled(isSkinAvailable("Criquet Suspect"));
-        jButton3.setEnabled(isSkinAvailable("Araignee Sans Pitie"));
-        jButton4.setEnabled(isSkinAvailable("Scarabee Mal Fame"));
+        jButton1.setEnabled(isSkinAvailable("Araignee Sans Pitie"));
+        jButton2.setEnabled(isSkinAvailable("Mante Religieuse Tueuse"));
+        jButton3.setEnabled(isSkinAvailable("Scarabee Mal Fame"));
+        jButton4.setEnabled(isSkinAvailable("Criquet Suspect"));
 
     }
     
@@ -138,10 +149,10 @@ public class Skin extends javax.swing.JFrame {
 }
 
     private void setupListeners() {
-        jButton1.addActionListener(choose("Mante Religieuse Tueuse"));
-        jButton2.addActionListener(choose("Criquet Suspect"));
-        jButton3.addActionListener(choose("Araignee Sans Pitie"));
-        jButton4.addActionListener(choose("Scarabee Mal Fame"));
+        jButton1.addActionListener(choose("Araignee Sans Pitie"));
+        jButton2.addActionListener(choose("Mante Religieuse Tueuse"));
+        jButton3.addActionListener(choose("Scarabee Mal Fame"));
+        jButton4.addActionListener(choose("Criquet Suspect"));
     }
     
     private void selectSkin(String skinName) {
@@ -163,13 +174,15 @@ public class Skin extends javax.swing.JFrame {
             update.executeUpdate();
             int skinId = getSkinId(skinName);
 
+
             // 3) Mettre à jour la table Character (celle de ton screenshot)
             PreparedStatement updatePlayer = connexion.prepareStatement(
-                "UPDATE character SET skin = ? WHERE id = ?"
+                "UPDATE `character` SET skin = ? WHERE id = ?"
             );
             updatePlayer.setInt(1, skinId);
             updatePlayer.setInt(2, player.getId()); // ton joueur actuel
             updatePlayer.executeUpdate();
+            player.setCharacterId(skinId);
             connexion.close();
 
         } catch (SQLException e) {
@@ -229,37 +242,32 @@ public class Skin extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(96, Short.MAX_VALUE)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(27, 27, 27)
-                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(26, 26, 26)
-                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(150, 150, 150))
             .addGroup(layout.createSequentialGroup()
-                .addGap(107, 107, 107)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(45, Short.MAX_VALUE)
+                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(56, 56, 56))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(176, 176, 176)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 589, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(28, 28, 28)
+                .addGap(88, 88, 88)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addGap(108, 108, 108)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(48, 48, 48)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(157, Short.MAX_VALUE))
         );
 

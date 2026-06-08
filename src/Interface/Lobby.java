@@ -5,9 +5,14 @@
 package Interface;
 
 
+import Avatar.FenetreDeJeu;
+import java.awt.Font;
+import java.io.File;
 import java.sql.*;
 import javax.swing.Timer;
 import javax.swing.JOptionPane;
+import multiplayer.DonneesJoueur;
+import multiplayer.GestionnaireJoueurs;
 
 public class Lobby extends javax.swing.JFrame {
 
@@ -20,7 +25,19 @@ public class Lobby extends javax.swing.JFrame {
 
     public Lobby(PlayerSQL player) {
         this.player = player;
+        setContentPane(new BackgroundPanel("Z:/Documents/GitHub/honeyrun/src/Interface/honey_background.png"));
         initComponents();
+        Font luckiestBase = null;
+        try {
+            luckiestBase = Font.createFont(
+                Font.TRUETYPE_FONT,
+                new File("src/Interface/luckiest-guy/luckiestguy.ttf")
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        jLabelStatus.setFont(luckiestBase.deriveFont(24f));
+        jLabelTitle.setFont(luckiestBase.deriveFont(36f));
         setLocationRelativeTo(null);
 
         jLabelTitle.setText("Salle d'attente");
@@ -41,7 +58,7 @@ public class Lobby extends javax.swing.JFrame {
             );
 
             PreparedStatement requete = connexion.prepareStatement(
-                "SELECT COUNT(*) AS total FROM joueur WHERE skin IS NOT NULL"
+                "SELECT COUNT(*) AS total FROM Characters WHERE Disponibilité=0"
             );
 
             ResultSet rs = requete.executeQuery();
@@ -103,11 +120,24 @@ public class Lobby extends javax.swing.JFrame {
     // -----------------------------
     // 4. Lancer la partie
     // -----------------------------
-    private void launchGame() {
-        JOptionPane.showMessageDialog(this, "La partie commence !");
-        // Ici tu lanceras ta fenêtre de jeu réelle
-        // new GameFrame(player).setVisible(true);
-    }
+    // Connexion à au jeu réel (Fentre de jeu)
+private void launchGame() {
+    JOptionPane.showMessageDialog(this, "La partie commence !");
+
+    GestionnaireJoueurs gestionnaire = new GestionnaireJoueurs();
+
+    DonneesJoueur moi = new DonneesJoueur(
+        player.getId(),
+        player.getNom(),
+        player.getSpawnX(),
+        player.getSpawnY(),
+        player.getAvatar()
+    );
+
+    new FenetreDeJeu(moi, gestionnaire).setVisible(true);
+
+    dispose();
+}
 
 
     // Variables NetBean
@@ -134,24 +164,23 @@ public class Lobby extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(407, Short.MAX_VALUE)
+                .addComponent(jLabelTitle)
+                .addGap(525, 525, 525))
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(97, 97, 97)
-                        .addComponent(jLabelStatus))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(140, 140, 140)
-                        .addComponent(jLabelTitle)))
-                .addContainerGap(223, Short.MAX_VALUE))
+                .addGap(286, 286, 286)
+                .addComponent(jLabelStatus)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(54, 54, 54)
-                .addComponent(jLabelStatus)
-                .addGap(94, 94, 94)
+                .addGap(65, 65, 65)
                 .addComponent(jLabelTitle)
-                .addContainerGap(120, Short.MAX_VALUE))
+                .addGap(136, 136, 136)
+                .addComponent(jLabelStatus)
+                .addContainerGap(266, Short.MAX_VALUE))
         );
 
         pack();
