@@ -43,7 +43,18 @@ public class Lobby extends javax.swing.JFrame {
         jLabelTitle.setText("Salle d'attente");
         jLabelStatus.setText("Joueurs prêts : 0/4");
 
-        startCheckingPlayers();
+        // Mode solo : si le pseudo est "seul", on saute l'attente des autres joueurs.
+        // invokeLater est nécessaire car launchGame() appelle dispose() — si on l'appelle
+        // directement dans le constructeur, dispose() s'exécute avant setVisible(true)
+        // et la fenêtre réapparaît quand même. invokeLater reporte l'exécution après
+        // que setVisible(true) soit appelé par Skin, donc dispose() fonctionne correctement
+        // et la fenêtre de jeu récupère le focus clavier.
+        if ("seul".equalsIgnoreCase(player.getPseudo())) {
+            jLabelStatus.setText("Mode solo — lancement immédiat...");
+            javax.swing.SwingUtilities.invokeLater(() -> launchGame());
+        } else {
+            startCheckingPlayers();
+        }
     }
 
     // -----------------------------
@@ -120,24 +131,58 @@ public class Lobby extends javax.swing.JFrame {
     // -----------------------------
     // 4. Lancer la partie
     // -----------------------------
-    // Connexion à au jeu réel (Fentre de jeu)
-private void launchGame() {
-    JOptionPane.showMessageDialog(this, "La partie commence !");
+    private void launchGame() {
+        try {
+            // Connexion à la base pour lire les données du joueur enregistrées par Accueil et Skin
+            Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP"
+            );
 
-    GestionnaireJoueurs gestionnaire = new GestionnaireJoueurs();
+            // Récupère la ligne du joueur courant dans la table character
+            PreparedStatement ps = connexion.prepareStatement(
+                "SELECT id, pseudo, X, Y, spawnX, spawnY, skin, hasHoney, hasWin, lifes FROM `character` WHERE id = ?"
+            );
+            ps.setInt(1, player.getId());
+            ResultSet rs = ps.executeQuery();
 
-    DonneesJoueur moi = new DonneesJoueur(
-        player.getId(),
-        player.getNom(),
-        player.getSpawnX(),
-        player.getSpawnY(),
-        player.getAvatar()
-    );
+            if (!rs.next()) {
+                JOptionPane.showMessageDialog(this, "Joueur introuvable en base.");
+                connexion.close();
+                return;
+            }
 
-    new FenetreDeJeu(moi, gestionnaire).setVisible(true);
+            // skin est stocké en String dans la DB (null possible si non choisi) → conversion sécurisée
+            int skin;
+            try { skin = Integer.parseInt(rs.getString("skin")); } catch (NumberFormatException e) { skin = 0; }
 
-    dispose();
-}
+            // Construit l'objet de données du joueur à partir de la DB
+            DonneesJoueur moi = new DonneesJoueur(
+                rs.getInt("id"),
+                rs.getString("pseudo"),
+                rs.getDouble("X"),       // position actuelle (= spawn au démarrage)
+                rs.getDouble("Y"),
+                rs.getDouble("spawnX"),  // point de réapparition en cas de mort
+                rs.getDouble("spawnY"),
+                skin,
+                rs.getBoolean("hasHoney"),
+                rs.getBoolean("hasWin"),
+                rs.getInt("lifes")
+            );
+
+            connexion.close();
+
+            // Lance la fenêtre de jeu et ferme le lobby
+            GestionnaireJoueurs gestionnaire = new GestionnaireJoueurs();
+            new FenetreDeJeu(moi, gestionnaire).setVisible(true);
+            dispose();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Erreur de connexion : " + ex.getMessage());
+        }
+    }
 
 
     // Variables NetBean

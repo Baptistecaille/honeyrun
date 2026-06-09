@@ -56,10 +56,10 @@ public class Jeu {
     }
 
     public Jeu() {
-        this(80, 60, "Player1");
+        this(80, 60, "Player1", 0);
     }
 
-    public Jeu(double playerSpawnX, double playerSpawnY, String playerName) {
+    public Jeu(double playerSpawnX, double playerSpawnY, String playerName, int skinId) {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
         this.honey =new Honey();
@@ -69,7 +69,7 @@ public class Jeu {
         this.score = 0;
 
         // On accepte soit la ressource empaquetee, soit le fichier present dans le projet pour rester runnable en dev.
-        BufferedImage sprite = chargerSprite();
+        BufferedImage sprite = chargerSprite(skinId);
 
         this.monsters = new ArrayList<>();
         double[][] monsterSpawns = GameConstants.MONSTER_SPAWNS;
@@ -95,10 +95,13 @@ public class Jeu {
         this.player = P1;
     }
 
-    private BufferedImage chargerSprite() {
+    private BufferedImage chargerSprite(int skinId) {
+        String[] noms = {null, "Araignee", "Mantereligieuse", "Scarabe", "Criquet"};
+        // Si le skinId est en dehors de l'intervalle [1, 4], on utilise "Mantereligieuse" comme sprite par défaut pour éviter les erreurs d'index et avoir un sprite visible.
+        String nomFichier = (skinId >= 1 && skinId < noms.length) ? noms[skinId] : "Mantereligieuse"; 
+
         try {
-            // Premier essai: chargement depuis le classpath quand l'application est lancee depuis le jar.
-            var resource = getClass().getResource("/resources/Mantereligieuse.png");
+            var resource = getClass().getResource("/resources/" + nomFichier + ".png");
             if (resource != null) {
                 BufferedImage sprite = ImageIO.read(resource);
                 if (sprite != null) {
@@ -106,8 +109,7 @@ public class Jeu {
                 }
             }
 
-            // Fallback utile pendant le dev quand on execute depuis la racine du projet.
-            File fallback = new File("src/resources/Mantereligieuse.png");
+            File fallback = new File("src/resources/" + nomFichier + ".png");
             if (fallback.exists()) {
                 BufferedImage sprite = ImageIO.read(fallback);
                 if (sprite != null) {

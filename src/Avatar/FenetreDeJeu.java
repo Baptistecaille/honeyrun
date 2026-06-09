@@ -58,7 +58,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         this.jLabel1.setIcon(new ImageIcon(framebuffer));
         this.contexte = this.framebuffer.createGraphics();
 
-        this.jeu = new Jeu(moi.spawnX, moi.spawnY, moi.nom);
+        this.jeu = new Jeu(moi.spawnX, moi.spawnY, moi.nom, moi.avatar);
 
         this.gestionnaire = gestionnaire;
         this.joueurId = moi.id;
@@ -98,7 +98,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     }
 
     private BufferedImage[] chargerSpritesJoueurs() {
-        String[] noms = {null, "Abeille", "Araignee", "Criquet", "Scarabe"};
+        String[] noms = {null, "Araignee", "Mantereligieuse", "Scarabe", "Criquet"};
         BufferedImage[] sprites = new BufferedImage[5];
 
         for (int skin = 1; skin <= 4; skin++) {
@@ -262,27 +262,10 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     }
 
     public static void main(String[] args) {
-        String pseudo = JOptionPane.showInputDialog(null, "Entrez votre pseudo :", "HoneyRun", JOptionPane.PLAIN_MESSAGE);
-        if (pseudo == null || pseudo.trim().isEmpty()) return;
-        pseudo = pseudo.trim();
-
-        GestionnaireJoueurs gestionnaire = new GestionnaireJoueurs();
-        DonneesJoueur moi;
-        try {
-            moi = gestionnaire.connecter(pseudo);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return;
-        }
-        if (moi == null) return;
-
-        final DonneesJoueur joueur = moi;
-        final GestionnaireJoueurs g = gestionnaire;
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                FenetreDeJeu fenetre = new FenetreDeJeu(joueur, g);
-                fenetre.setVisible(true);
+                new Interface.Accueil().setVisible(true);
             }
         });
     }

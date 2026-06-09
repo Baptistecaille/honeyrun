@@ -25,7 +25,8 @@ public class Accueil extends javax.swing.JFrame {
     
 
     public Accueil() {
-        setContentPane(new BackgroundPanel("Z:/Documents/GitHub/honeyrun/src/Interface/honey_background.png")); 
+        // Changement du chemin de l'image de fond de golbal à relatif pour éviter les problèmes de portabilité
+        setContentPane(new BackgroundPanel("src/Interface/honey_background.png")); 
         initComponents();
         Font luckiestBase = null;
 
