@@ -38,6 +38,18 @@ public class CollisionMap {
         this.rows = loadedRows;
     }
 
+    public int[][] getGrid() {
+        return grid;
+    }
+
+    public int getCols() {
+        return cols;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
     // Constructor for tests (no file I/O)
     public CollisionMap(int[][] grid) {
         this.grid  = grid;

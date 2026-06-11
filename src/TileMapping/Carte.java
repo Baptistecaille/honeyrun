@@ -211,6 +211,10 @@ public class Carte {
 
     return minimap;
     }
+  
+    public int[][] getDecor() {
+        return decor;
+    }
   }
     
 //Méthode pour savoir si on a une collision ou non 

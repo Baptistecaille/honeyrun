@@ -1,4 +1,6 @@
 package Avatar;
+import TileMapping.Carte;
+import TileMapping.CollisionMap;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
@@ -33,7 +35,7 @@ public class Player extends Avatar {
     private volatile long invincibleUntil = 0;
     private volatile boolean won = false;
     private volatile boolean gameOver = false;
-   
+    private CollisionMap collisionMap;
     
 
     public Player(
@@ -75,7 +77,7 @@ public class Player extends Avatar {
                 double dt = (now - lastTime) / 1000.0;
                 lastTime = now;
 
-                miseAJour(dt);
+                miseAJour(dt,this.collisionMap);
                 syncHitbox();
                 updateHarvesting(now);
                 handleMonsterCollisions(now);
@@ -103,44 +105,60 @@ public class Player extends Avatar {
 
 
     
-    public void miseAJour(double dt) {
+    public void miseAJour(double dt, CollisionMap map) {
+        int col = (int)(this.position.getX() / TILE_SIZE); // colonne de tuile
+        int row = (int)(this.position.getY() / TILE_SIZE); // ligne de tuile
+        double speedFactor = map.getSpeedFactor(col, row); // facteur de vitesse ralenti ou pas en fonction des tuiles (tuile 414)
         if (this.toucheGauche){
             double x = this.getPosition().getX();
-            x-= (1*this.speed * TILE_SIZE * dt);
-            this.position.setX(x);
+            double newX= x - (1*this.speed *speedFactor * TILE_SIZE * dt);
+            col = (int)(newX / TILE_SIZE);
+            if (!map.isMur(col,row)){ // tuiles 415
+                this.position.setX(newX);
+            }
         }
         if (this.toucheDroite){
             double x = this.getPosition().getX();
-            x+= (1*this.speed * TILE_SIZE * dt);
-            this.position.setX(x);
+            double newX= x+ (1*this.speed * speedFactor * TILE_SIZE * dt);
+            col = (int)(newX / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setX(newX);
+            }
         }
         if (this.toucheBas){
             double y = this.getPosition().getY();
-            y+= (1*this.speed * TILE_SIZE * dt);
-            this.position.setY(y);
+            double newY = y+ (1*this.speed* speedFactor * TILE_SIZE * dt);
+             row = (int)(newY / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setY(newY);
+            }
         }
         if (this.toucheHaut){
             double y = this.getPosition().getY();
-            y-= (1*this.speed * TILE_SIZE * dt);
-            this.position.setY(y);
+            double newY = y - (1*this.speed * speedFactor * TILE_SIZE * dt);
+             row = (int)(newY / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setY(newY);
+            }
         }
-        if (this.getPosition().getX()> GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE){// collision avec le bord droit de la scene, taille de la hitbox
-            this.position.setX( GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE);
+//        if (this.getPosition().getX()> GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE){// collision avec le bord droit de la scene, taille de la hitbox
+//            this.position.setX( GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE);
+//        }
+//        if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
+//            this.position.setX(0);
+//        }   
+//        if(this.getPosition().getY()> GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE){  // collision avec le bord bas de la scene
+//            this.position.setY(GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE);
+//        }
+//        if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
+//            this.position.setY(0); 
+//        }
+ // les lignes précédentes étaient au début quand on avait pas les collisions
         }
-        if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
-            this.position.setX(0);
-        }   
-        if(this.getPosition().getY()> GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE){  // collision avec le bord bas de la scene
-            this.position.setY(GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE);
-        }
-        if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
-            this.position.setY(0); 
-        }
- 
-        
-       // if isAccessible
-       
-        }
+    
+    public void setCollisionMap(CollisionMap map) {
+    this.collisionMap = map;
+}
         
 
 

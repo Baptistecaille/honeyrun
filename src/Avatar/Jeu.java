@@ -41,6 +41,7 @@ public class Jeu {
     private Carte calque2;
     private Carte calque3;
     private BufferedImage minimap;
+    private CollisionMap collisionMap;
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
         // On crée une nouvelle image (TYPE_INT_ARGB)
@@ -63,7 +64,7 @@ public class Jeu {
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
         this.calque2 = new Carte("src/TileMapping/Calque221920.txt");
         this.honey =new Honey();
-        CollisionMap collisionMap = new CollisionMap("src/TileMapping/Calque111920_1.txt");
+        this.collisionMap = new CollisionMap("src/TileMapping/Calque111920_1.txt");
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
         this.minimap = this.calque2.genererImageMiniMap(300, 225);
         this.score = 0;
@@ -93,6 +94,7 @@ public class Jeu {
         P1.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - playerHitbox.getWidth(), GameConstants.SCREEN_HEIGHT - playerHitbox.getHeight());
         P1.startMovement();
         this.player = P1;
+        this.player.setCollisionMap(this.collisionMap);
     }
 
     private BufferedImage chargerSprite(int skinId) {
@@ -193,11 +195,14 @@ public class Jeu {
         // Le mouvement du joueur est géré par son thread interne (startMovement)
         this.calque1.miseAJour();
         this.calque2.miseAJour();
+       
+       
         if (this.player.hasHoney()){
             this.honey.miseAJourMini();}
         else{
             this.honey.miseAJourMaxi();
                     }
+        
         //this.calque3.miseAJour();
     }
    
