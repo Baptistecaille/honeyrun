@@ -66,6 +66,13 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         this.autresJoueurs = new ArrayList<>();
         this.spritesParSkin = chargerSpritesJoueurs();
 
+        // Supprime la ligne du joueur en base même en cas de crash ou de fermeture brutale de la fenetre, où arreter().
+        final int idPourHook = moi.id;
+        final GestionnaireJoueurs gestionnaireHook = gestionnaire;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try { gestionnaireHook.deconnecter(idPourHook); } catch (Exception ignored) {}
+        }, "cleanup-hook"));
+
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {

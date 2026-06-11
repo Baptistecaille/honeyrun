@@ -32,6 +32,7 @@ public class Monsters extends Avatar {
     // init de random pour les délpacements aléatoires.
     private final Random random = new Random();
     private CollisionMap collisionMap;
+    private volatile ArrayList<Monsters> autresMonstres = new ArrayList<>();
 
     public Monsters(double x, double y, double speed, Hitbox hitbox) {
         super(new Coordinates(snapToTileValue(x), snapToTileValue(y)), null, speed, hitbox);
@@ -188,7 +189,8 @@ public class Monsters extends Avatar {
             nextX = Math.max(minBounds.getX(), Math.min(maxBounds.getX(), nextX));
             nextY = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), nextY));
 
-            if (isMurAt(nextX, nextY)) {
+            // Bloque si mur ou si un autre monstre occupe déjà la case
+            if (isMurAt(nextX, nextY) || isMonsterAt(nextX, nextY)) {
                 // La direction principale est bloquée par un mur.
                 // On calcule les deux directions perpendiculaires pour contourner l'obstacle.
                 // Si le monstre allait horizontalement, on essaie vertical (et inversement).
@@ -213,14 +215,14 @@ public class Monsters extends Avatar {
                 double c2y = Math.max(minBounds.getY(), Math.min(maxBounds.getY(), position.getY() + p2y * TILE_SIZE));
 
                 // On tente la première alternative (la plus proche de la cible sur l'axe perpendiculaire)
-                if (!isMurAt(c1x, c1y)) {
+                if (!isMurAt(c1x, c1y) && !isMonsterAt(c1x, c1y)) {
                     position.setX(c1x); position.setY(c1y);
                     heading.setX(p1x); heading.setY(p1y);
                     velocity.setX(p1x * TILE_SIZE); velocity.setY(p1y * TILE_SIZE);
                     return;
                 }
                 // Si elle est aussi bloquée, on tente l'autre côté
-                if (!isMurAt(c2x, c2y)) {
+                if (!isMurAt(c2x, c2y) && !isMonsterAt(c2x, c2y)) {
                     position.setX(c2x); position.setY(c2y);
                     heading.setX(p2x); heading.setY(p2y);
                     velocity.setX(p2x * TILE_SIZE); velocity.setY(p2y * TILE_SIZE);
@@ -257,6 +259,16 @@ public class Monsters extends Avatar {
         return collisionMap.isMur((int)(worldX / TILE_SIZE), (int)(worldY / TILE_SIZE));
     }
 
+    // Vérifie si une case est déjà occupée par un autre monstre (collision monstre-monstre)
+    private boolean isMonsterAt(double worldX, double worldY) {
+        for (Monsters m : autresMonstres) {
+            if (Math.abs(m.getX() - worldX) < 1.0 && Math.abs(m.getY() - worldY) < 1.0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void chooseRandomDirection() {
 
         // initialisation des directions possibles (droite, gauche, bas, haut)
@@ -275,11 +287,13 @@ public class Monsters extends Avatar {
             double nextY = position.getY() + d[1] * TILE_SIZE;
 
             // ON verifie que la nouvelle position ne dépasse pas les limites de déplacement du monstre.
+            // La case doit être dans les limites, libre de murs et non occupée par un autre monstre
             if (nextX >= minBounds.getX()
                     && nextX <= maxBounds.getX()
                     && nextY >= minBounds.getY()
                     && nextY <= maxBounds.getY()
-                    && !isMurAt(nextX, nextY)) {
+                    && !isMurAt(nextX, nextY)
+                    && !isMonsterAt(nextX, nextY)) {
                 //Si elle est valide, on met à jour la position, la direction et la vitesse du monstre, puis on sort de la boucle.
                 position.setX(nextX);
                 position.setY(nextY);
