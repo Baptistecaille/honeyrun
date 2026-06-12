@@ -27,7 +27,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
 import multiplayer.DonneesJoueur;
+import multiplayer.DonneesMonstre;
 import multiplayer.GestionnaireJoueurs;
+import multiplayer.GestionnairesMonstres;
 
 /**
  * Exemple de fenetre de jeu en utilisant uniquement des commandes
@@ -42,10 +44,12 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private Jeu jeu;
     private Timer timer;
     private GestionnaireJoueurs gestionnaire;
+    private GestionnairesMonstres gestionnaireMonstres;
     private int joueurId;
     private volatile boolean partieFinie;
     private volatile ArrayList<DonneesJoueur> autresJoueurs;
     private BufferedImage[] spritesParSkin;
+    private ArrayList<DonneesMonstre> monstresDb;
 
 
     public FenetreDeJeu(DonneesJoueur moi, GestionnaireJoueurs gestionnaire) {
@@ -66,6 +70,13 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         this.jeu = new Jeu(moi.spawnX, moi.spawnY, moi.nom, moi.avatar);
 
         this.gestionnaire = gestionnaire;
+        this.gestionnaireMonstres = new GestionnairesMonstres();
+        try {
+            this.monstresDb = new ArrayList<>(this.gestionnaireMonstres.initialiser());
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            this.monstresDb = new ArrayList<>();
+        }
         this.joueurId = moi.id;
 
         this.partieFinie = false;
@@ -202,6 +213,16 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         );
     }
 
+    private boolean estClientAutoritaire(ArrayList<DonneesJoueur> joueursSynchronises) {
+        int plusPetitId = joueurId;
+        for (DonneesJoueur joueur : joueursSynchronises) {
+            if (joueur != null && joueur.id < plusPetitId) {
+                plusPetitId = joueur.id;
+            }
+        }
+        return joueurId == plusPetitId;
+    }
+
     private void demarrerThreadSync() {
         new Thread(new Runnable() { // Runnable permet de définir le code à exécuter dans le thread sans avoir à créer une classe séparée.
             @Override
@@ -228,10 +249,21 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         joueursPourMonstres.add(creerDonneesJoueurLocal());
                         jeu.mettreAJourJoueursPourMonstres(joueursPourMonstres);
 
+                        boolean clientAutoritaire = estClientAutoritaire(joueursSynchronises);
+                        jeu.setMonstresActifs(clientAutoritaire);
+                        if (clientAutoritaire) {
+                            gestionnaireMonstres.mettreAJourPositions(jeu.creerDonneesMonstres(monstresDb));
+                            monstresDb = new ArrayList<>(gestionnaireMonstres.lireTousLesMonstres());
+                        } else {
+                            monstresDb = new ArrayList<>(gestionnaireMonstres.lireTousLesMonstres());
+                            jeu.appliquerPositionsMonstres(monstresDb);
+                        }
+
                         if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
                             gestionnaire.signalerVictoire(joueurId);
                             gestionnaire.deconnecter(joueurId);
                             reinitialiserDisponibilites();
+                            gestionnaireMonstres.reinitialiser();
                             gestionnaire.reinitialiser();
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
@@ -248,6 +280,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                                 final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
                                 gestionnaire.deconnecter(joueurId);
                                 reinitialiserDisponibilites(); // Remet les disponibilités à 1
+                                gestionnaireMonstres.reinitialiser();
                                 gestionnaire.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override

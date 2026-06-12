@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
@@ -100,8 +99,8 @@ public class GestionnaireJoueurs {
     /**
      * Lit toutes les lignes de la table joueur.
      */
-    public List<DonneesJoueur> lireTousLesJoueurs() throws SQLException {
-        List<DonneesJoueur> joueurs = new ArrayList<>();
+    public ArrayList<DonneesJoueur> lireTousLesJoueurs() throws SQLException {
+        ArrayList<DonneesJoueur> joueurs = new ArrayList<>();
         try (PreparedStatement ps = connexion.prepareStatement(
                 "SELECT id, pseudo, X, Y, spawnX, spawnY, skin, hasHoney, hasWin, lifes FROM `character`")) {
             ResultSet rs = ps.executeQuery();

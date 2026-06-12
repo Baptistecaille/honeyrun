@@ -30,11 +30,19 @@ public final class GameConstants {
     public static final double SPAWN_ZONE_SIZE = 96.0;
 
 
-    // TO MODIFY 
     public static final double[][] MONSTER_SPAWNS = {
-        {384.0, 288.0},
-        {160.0, 160.0},
-        {608.0, 416.0}
+        {192.0, 96.0},
+        {96.0, 256.0},
+        {288.0, 288.0},
+        {1728.0, 96.0},
+        {1824.0, 256.0},
+        {1632.0, 288.0},
+        {192.0, 992.0},
+        {96.0, 832.0},
+        {288.0, 800.0},
+        {1728.0, 992.0},
+        {1824.0, 832.0},
+        {1632.0, 800.0}
     };
 
     private GameConstants() {

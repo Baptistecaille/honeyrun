@@ -20,6 +20,7 @@ import TileMapping.CollisionMap;
 import Tools.Coordinates;
 import Tools.Hitbox;
 import multiplayer.DonneesJoueur;
+import multiplayer.DonneesMonstre;
 
 /**
  *
@@ -42,6 +43,8 @@ public class Jeu {
     private Carte calque3;
     private BufferedImage minimap;
     private CollisionMap collisionMap;
+    private BufferedImage monsterSprite;
+    private boolean monstresActifs = true;
     
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
@@ -72,6 +75,7 @@ public class Jeu {
 
         // On accepte soit la ressource empaquetee, soit le fichier present dans le projet pour rester runnable en dev.
         BufferedImage sprite = chargerSprite(skinId);
+        this.monsterSprite = chargerSpriteParNom("Abeille");
 
         this.monsters = new ArrayList<>();
         double[][] monsterSpawns = GameConstants.MONSTER_SPAWNS;
@@ -82,6 +86,7 @@ public class Jeu {
             m.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - GameConstants.MONSTER_SIZE, GameConstants.SCREEN_HEIGHT - GameConstants.MONSTER_SIZE);
             m.startMovement();
             m.setCollisionMap(collisionMap);
+            m.setImage(this.monsterSprite);
             m.setColor(Color.BLACK);
             this.monsters.add(m);
         }
@@ -132,7 +137,32 @@ public class Jeu {
         g2d.dispose();
         return placeholder;
     }
-        private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
+
+    private BufferedImage chargerSpriteParNom(String nomFichier) {
+        try {
+            var resource = getClass().getResource("/resources/" + nomFichier + ".png");
+            if (resource != null) {
+                BufferedImage sprite = ImageIO.read(resource);
+                if (sprite != null) {
+                    return redimensionner(sprite, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+                }
+            }
+
+            File fallback = new File("src/resources/" + nomFichier + ".png");
+            if (fallback.exists()) {
+                BufferedImage sprite = ImageIO.read(fallback);
+                if (sprite != null) {
+                    return redimensionner(sprite, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return null;
+    }
+
+    private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
         if (minimap == null) return;
         int x = largeurEcran - minimap.getWidth()  - 15;
         int y = hauteurEcran - minimap.getHeight() - 830;
@@ -189,8 +219,12 @@ public class Jeu {
             int y = worldToScreenY(monster.getY());
             int w = (int) Math.round(monster.getHitbox().getWidth());
             int h = (int) Math.round(monster.getHitbox().getHeight());
-            contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK); // Si la couleur du monstre n'est pas définie, on utilise le noir par défaut.
-            contexte.fillRect(x, y, w * MAP_ZOOM, h * MAP_ZOOM);
+            if (monster.getImage() != null) {
+                contexte.drawImage(monster.getImage(), x, y, w * MAP_ZOOM, h * MAP_ZOOM, null);
+            } else {
+                contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK); // Si la couleur du monstre n'est pas définie, on utilise le noir par défaut.
+                contexte.fillRect(x, y, w * MAP_ZOOM, h * MAP_ZOOM);
+            }
         }
     }
 
@@ -220,6 +254,47 @@ public class Jeu {
         if (monsters != null) {
             for (Monsters monster : monsters) {
                 monster.setJoueurs(snapshot);
+            }
+        }
+    }
+
+    public ArrayList<DonneesMonstre> creerDonneesMonstres(ArrayList<DonneesMonstre> monstresDb) {
+        ArrayList<DonneesMonstre> donnees = new ArrayList<>();
+        if (monsters == null || monstresDb == null) {
+            return donnees;
+        }
+
+        int nombre = Math.min(monsters.size(), monstresDb.size());
+        for (int i = 0; i < nombre; i++) {
+            Monsters monster = monsters.get(i);
+            DonneesMonstre monstreDb = monstresDb.get(i);
+            donnees.add(new DonneesMonstre(monstreDb.id, monster.getX(), monster.getY()));
+        }
+        return donnees;
+    }
+
+    public void appliquerPositionsMonstres(ArrayList<DonneesMonstre> monstresDb) {
+        if (monsters == null || monstresDb == null) {
+            return;
+        }
+
+        int nombre = Math.min(monsters.size(), monstresDb.size());
+        for (int i = 0; i < nombre; i++) {
+            DonneesMonstre monstreDb = monstresDb.get(i);
+            monsters.get(i).setPosition(monstreDb.x, monstreDb.y);
+        }
+    }
+
+    public void setMonstresActifs(boolean actifs) {
+        if (monstresActifs == actifs || monsters == null) {
+            return;
+        }
+        monstresActifs = actifs;
+        for (Monsters monster : monsters) {
+            if (actifs) {
+                monster.startMovement();
+            } else {
+                monster.stopMovement();
             }
         }
     }
