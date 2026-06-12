@@ -137,28 +137,6 @@ public class GestionnaireJoueurs {
     }
 
     /**
-     * Tente un vol atomique du miel : retire le miel du porteur (idPorteur) et le donne au voleur (idVoleur).
-     * Le UPDATE conditionnel (AND hasHoney=1) empêche deux voleurs simultanés de réussir en même temps.
-     * Retourne true si le vol a réussi, false si le porteur n'avait plus le miel (quelqu'un d'autre plus rapide).
-     */
-    public boolean volerMiel(int idVoleur, int idPorteur) throws SQLException {
-        // On retire le miel du porteur uniquement s'il l'a encore (protection contre double-vol simultané)
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=0 WHERE id=? AND hasHoney=1")) {
-            ps.setInt(1, idPorteur);
-            int rows = ps.executeUpdate();
-            if (rows == 0) return false; // trop tard, quelqu'un d'autre a déjà volé
-        }
-        // Vol réussi : on donne le miel au voleur
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=1 WHERE id=?")) {
-            ps.setInt(1, idVoleur);
-            ps.executeUpdate();
-        }
-        return true;
-    }
-
-    /**
      * Marque le joueur local comme gagnant.
      */
     public void signalerVictoire(int id) throws SQLException {

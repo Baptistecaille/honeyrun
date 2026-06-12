@@ -64,8 +64,6 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         this.contexte = this.framebuffer.createGraphics();
 
         this.jeu = new Jeu(moi.spawnX, moi.spawnY, moi.nom, moi.avatar);
-        // donne au joueur local accès à la base de données pour pouvoir voler le miel
-        this.jeu.getPlayer().setGestionnaire(gestionnaire, moi.id);
 
         this.gestionnaire = gestionnaire;
         this.joueurId = moi.id;
@@ -210,9 +208,6 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
             public void run() {
                 while (!partieFinie) {
                     try {
-                        // On écrit notre état en DB EN PREMIER, puis on lit.
-                        // Si on lit avant d'écrire, un hasHoney=true fraîchement récolté n'est pas encore en DB,
-                        // et la détection de vol ci-dessous appelle onMielVole() à tort.
                         gestionnaire.mettreAJourPosition(
                             joueurId,
                             jeu.getPlayer().getX(),
@@ -220,25 +215,8 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             jeu.getPlayer().hasHoney(),
                             jeu.getPlayer().getLives()
                         );
-
                         ArrayList<DonneesJoueur> joueursSynchronises = new ArrayList<>(gestionnaire.lireTousLesJoueurs());
                         autresJoueurs = joueursSynchronises;
-
-                        // Si la DB indique qu'on n'a plus le miel alors qu'on croyait l'avoir → vol détecté
-                        for (DonneesJoueur j : joueursSynchronises) {
-                            if (j.id == joueurId && !j.hasHoney && jeu.getPlayer().hasHoney()) {
-                                jeu.getPlayer().onMielVole();
-                                break;
-                            }
-                        }
-
-                        // On transmet la liste des joueurs au Jeu et au Player pour l'affichage et les collisions
-                        jeu.setAutresJoueurs(joueursSynchronises);
-                        ArrayList<DonneesJoueur> autresSeulement = new ArrayList<>();
-                        for (DonneesJoueur j : joueursSynchronises) {
-                            if (j.id != joueurId) autresSeulement.add(j);
-                        }
-                        jeu.getPlayer().setAutresJoueurs(autresSeulement);
 
                         ArrayList<DonneesJoueur> joueursPourMonstres = new ArrayList<>();
                         for (int i = 0; i < joueursSynchronises.size(); i++) {
@@ -313,16 +291,6 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
             if (j.nom != null) {
                 contexte.setColor(Color.BLACK);
                 contexte.drawString(j.nom, screenX, screenY - 4);
-            }
-            // Si ce joueur porte le miel, on affiche le pot en mini au-dessus de son sprite
-            if (j.hasHoney) {
-                BufferedImage honeyImg = jeu.getHoneySprite();
-                if (honeyImg != null) {
-                    contexte.drawImage(honeyImg,
-                        screenX + GameConstants.SPRITE_SIZE / 2 - 15,
-                        screenY - 35,
-                        30, 30, null);
-                }
             }
         }
     }

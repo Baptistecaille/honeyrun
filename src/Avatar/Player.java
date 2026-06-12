@@ -1,13 +1,11 @@
 package Avatar;
+import TileMapping.Carte;
+import TileMapping.CollisionMap;
 import java.awt.Graphics2D;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
-import TileMapping.CollisionMap;
-import Tools.Coordinates; // miel unique : gestion des erreurs SQL lors du vol
+import Tools.Coordinates;
 import Tools.Hitbox;
-import multiplayer.DonneesJoueur;
-import multiplayer.GestionnaireJoueurs; // miel unique : données des autres joueurs (position, hasHoney)
 
 public class Player extends Avatar {
     private static final double TILE_SIZE = GameConstants.TILE_SIZE;
@@ -38,12 +36,6 @@ public class Player extends Avatar {
     private volatile boolean won = false;
     private volatile boolean gameOver = false;
     private CollisionMap collisionMap;
-
-    // --- Unicité du pot de miel ---
-    private volatile long stopMvtUntil = 0; // timestamp jusqu'auquel le joueur est immobilisé (0.5s après vol)
-    private volatile ArrayList<DonneesJoueur> autresJoueurs = new ArrayList<>(); // snapshot DB des autres joueurs
-    private GestionnaireJoueurs gestionnaire; // référence pour appeler volerMiel() en DB
-    private int joueurId; // identifiant DB du joueur local
     
 
     public Player(
@@ -89,7 +81,6 @@ public class Player extends Avatar {
                 syncHitbox();
                 updateHarvesting(now);
                 handleMonsterCollisions(now);
-                handlePlayerCollisions(now); // détection contact avec le porteur (collision)
                 checkWinCondition();
 
                 try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
@@ -115,8 +106,6 @@ public class Player extends Avatar {
 
     
     public void miseAJour(double dt, CollisionMap map) {
-        // Si le joueur vient de se faire voler le miel, on stop son mouvement pendant 0.5 seconde pour lui laisser le temps de réagir et éviter les vols en chaîne instantanés
-        if (System.currentTimeMillis() < stopMvtUntil) return;
         int col = (int)(this.position.getX() / TILE_SIZE); // colonne de tuile
         int row = (int)(this.position.getY() / TILE_SIZE); // ligne de tuile
         double speedFactor = map.getSpeedFactor(col, row); // facteur de vitesse ralenti ou pas en fonction des tuiles (tuile 414)
@@ -168,32 +157,8 @@ public class Player extends Avatar {
         }
     
     public void setCollisionMap(CollisionMap map) {
-        this.collisionMap = map;
-    }
-
-    // --- Setters miel ---
-
-    // Reçoit le snapshot DB des autres joueurs à chaque cycle de sync (depuis FenetreDeJeu). 
-    public void setAutresJoueurs(ArrayList<DonneesJoueur> joueurs) {
-        this.autresJoueurs = joueurs != null ? joueurs : new ArrayList<>();
-    }
-
-    //Injecte le gestionnaire DB et l'id local pour permettre l'appel volerMiel(). 
-    public void setGestionnaire(GestionnaireJoueurs gestionnaire, int joueurId) {
-        this.gestionnaire = gestionnaire;
-        this.joueurId = joueurId;
-    }
-
-    /**
-     * Appelé par FenetreDeJeu quand le thread de synchronisation détecte que le miel a été volé en DB.
-     * Retire le miel localement et applique le stop mouvement de 0.5 seconde.
-     */
-    public void onMielVole() {
-        hasHoney = false;
-        isHarvesting = false;
-        harvestStartTime = 0;
-        stopMvtUntil = System.currentTimeMillis() + 500;
-    }
+    this.collisionMap = map;
+}
         
 
 
@@ -206,14 +171,6 @@ public class Player extends Avatar {
 
     private void updateHarvesting(long now) {
         if (hiveZone == null) return;
-        // On ne peut pas récolter si un autre joueur porte déjà le miel
-        for (DonneesJoueur j : autresJoueurs) {
-            if (j.hasHoney) {
-                isHarvesting = false;
-                harvestStartTime = 0;
-                return;
-            }
-        }
         if (overlaps(hitbox, hiveZone)) {
             if (!isHarvesting) {
                 isHarvesting = true;
@@ -253,43 +210,6 @@ public class Player extends Avatar {
                 }
                 break;
             }
-        }
-    }
-
-    /**
-     * Vérifie si le joueur local entre en contact avec le porteur du miel.
-     * Si oui, tente un vol atomique en DB. En cas de succès :
-     * - le joueur local prend le miel
-     * - il devient invincible pendant 1 seconde
-     * Le porteur sera stuné côté FenetreDeJeu via onMielVole() quand le sync DB détectera le changement.
-     */
-    private void handlePlayerCollisions(long now) {
-        // Pas de vol si on a déjà le miel, si on est invincible, ou si le gestionnaire n'est pas injecté
-        if (hasHoney || now < invincibleUntil || gestionnaire == null) return;
-        ArrayList<DonneesJoueur> snapshot = autresJoueurs;
-        for (DonneesJoueur j : snapshot) {
-            if (!j.hasHoney) continue;
-            // Le porteur est protégé sur sa propre zone de spawn : vol impossible là-bas
-            Hitbox porteurSpawnZone = new Hitbox(
-                new Coordinates(j.spawnX, j.spawnY),
-                GameConstants.SPAWN_ZONE_SIZE, GameConstants.SPAWN_ZONE_SIZE
-            );
-            Hitbox porteurHitbox = new Hitbox(
-                new Coordinates(j.x, j.y),
-                GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE
-            );
-            if (overlaps(porteurHitbox, porteurSpawnZone)) continue; // porteur intouchable sur son spawn
-            if (!overlaps(hitbox, porteurHitbox)) continue; // pas de contact
-            try {
-                boolean success = gestionnaire.volerMiel(joueurId, j.id);
-                if (success) {
-                    hasHoney = true;
-                    invincibleUntil = now + 1000; // 1 seconde d'invincibilité après le vol
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            break; // un seul vol par tick
         }
     }
 
