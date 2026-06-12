@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -27,7 +28,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
 import multiplayer.DonneesJoueur;
+import multiplayer.DonneesMonstre;
 import multiplayer.GestionnaireJoueurs;
+import multiplayer.GestionnairesMonstres;
 
 /**
  * Exemple de fenetre de jeu en utilisant uniquement des commandes
@@ -45,6 +48,8 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private int joueurId;
     private volatile boolean partieFinie;
     private volatile ArrayList<DonneesJoueur> autresJoueurs;
+    private GestionnairesMonstres gestionnaireMonstres;
+    private List<DonneesMonstre> referencesMonstres;
     private BufferedImage[] spritesParSkin;
 
 
@@ -69,6 +74,14 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
         this.gestionnaire = gestionnaire;
         this.joueurId = moi.id;
+        this.gestionnaireMonstres = new GestionnairesMonstres();
+        this.referencesMonstres = new ArrayList<>();
+        try {
+            this.referencesMonstres = gestionnaireMonstres.initialiser();
+            this.jeu.appliquerDonneesMonstres(referencesMonstres);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
 
         this.partieFinie = false;
         this.autresJoueurs = new ArrayList<>();
@@ -204,6 +217,35 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         );
     }
 
+    private boolean estClientAutoritaireMonstres(ArrayList<DonneesJoueur> joueursSynchronises) {
+        int idMinimum = joueurId;
+        for (DonneesJoueur joueur : joueursSynchronises) {
+            if (joueur.id < idMinimum) {
+                idMinimum = joueur.id;
+            }
+        }
+        return joueurId == idMinimum;
+    }
+
+    private void synchroniserMonstres(ArrayList<DonneesJoueur> joueursSynchronises) throws SQLException {
+        if (gestionnaireMonstres == null) {
+            return;
+        }
+        if (referencesMonstres == null || referencesMonstres.size() != GestionnairesMonstres.NOMBRE_MONSTRES) {
+            referencesMonstres = gestionnaireMonstres.initialiser();
+            jeu.appliquerDonneesMonstres(referencesMonstres);
+        }
+
+        boolean autoritaire = estClientAutoritaireMonstres(joueursSynchronises);
+        jeu.setMonstresAutoritaires(autoritaire);
+        if (autoritaire) {
+            gestionnaireMonstres.mettreAJourPositions(jeu.creerDonneesMonstres(referencesMonstres));
+        } else {
+            referencesMonstres = gestionnaireMonstres.lireTousLesMonstres();
+            jeu.appliquerDonneesMonstres(referencesMonstres);
+        }
+    }
+
     private void demarrerThreadSync() {
         new Thread(new Runnable() { // Runnable permet de définir le code à exécuter dans le thread sans avoir à créer une classe séparée.
             @Override
@@ -222,6 +264,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
                         ArrayList<DonneesJoueur> joueursSynchronises = new ArrayList<>(gestionnaire.lireTousLesJoueurs());
                         autresJoueurs = joueursSynchronises;
+                        synchroniserMonstres(joueursSynchronises);
 
                         // Si la DB indique qu'on n'a plus le miel alors qu'on croyait l'avoir → vol détecté
                         for (DonneesJoueur j : joueursSynchronises) {
@@ -254,6 +297,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             gestionnaire.deconnecter(joueurId);
                             reinitialiserDisponibilites();
                             gestionnaire.reinitialiser();
+                            if (gestionnaireMonstres != null) gestionnaireMonstres.reinitialiser();
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
@@ -270,6 +314,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                                 gestionnaire.deconnecter(joueurId);
                                 reinitialiserDisponibilites(); // Remet les disponibilités à 1
                                 gestionnaire.reinitialiser();
+                                if (gestionnaireMonstres != null) gestionnaireMonstres.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override
                                     public void run() {

@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -18,6 +19,7 @@ import TileMapping.CollisionMap;
 import Tools.Coordinates;
 import Tools.Hitbox;
 import multiplayer.DonneesJoueur;
+import multiplayer.DonneesMonstre;
 
 /**
  *
@@ -40,6 +42,7 @@ public class Jeu {
     private Carte calque3;
     private BufferedImage minimap;
     private CollisionMap collisionMap;
+    private boolean monstresAutoritaires = true;
 
     // Liste des autres joueurs pour savoir qui porte le miel et afficher le pot au-dessus du porteur
     private volatile ArrayList<DonneesJoueur> autresJoueurs = new ArrayList<>();
@@ -259,6 +262,48 @@ public class Jeu {
             for (Monsters monster : monsters) {
                 monster.setJoueurs(snapshot);
             }
+        }
+    }
+
+    public synchronized void setMonstresAutoritaires(boolean autoritaires) {
+        if (this.monstresAutoritaires == autoritaires) {
+            return;
+        }
+        this.monstresAutoritaires = autoritaires;
+        if (monsters == null) {
+            return;
+        }
+        for (Monsters monster : monsters) {
+            if (autoritaires) {
+                monster.startMovement();
+            } else {
+                monster.stopMovement();
+            }
+        }
+    }
+
+    public ArrayList<DonneesMonstre> creerDonneesMonstres(List<DonneesMonstre> references) {
+        ArrayList<DonneesMonstre> donnees = new ArrayList<>();
+        if (monsters == null || references == null) {
+            return donnees;
+        }
+        int count = Math.min(monsters.size(), references.size());
+        for (int i = 0; i < count; i++) {
+            Monsters monster = monsters.get(i);
+            DonneesMonstre reference = references.get(i);
+            donnees.add(new DonneesMonstre(reference.id, monster.getX(), monster.getY()));
+        }
+        return donnees;
+    }
+
+    public void appliquerDonneesMonstres(List<DonneesMonstre> donnees) {
+        if (monsters == null || donnees == null) {
+            return;
+        }
+        int count = Math.min(monsters.size(), donnees.size());
+        for (int i = 0; i < count; i++) {
+            DonneesMonstre donnee = donnees.get(i);
+            monsters.get(i).setPosition(donnee.x, donnee.y);
         }
     }
 

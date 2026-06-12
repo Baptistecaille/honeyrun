@@ -1,5 +1,7 @@
 package multiplayer;
 
+import Avatar.GameConstants;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,10 +11,7 @@ import java.util.List;
 
 public class GestionnairesMonstres {
 
-    public static final int NOMBRE_MONSTRES = 3;
-
-    private static final double[] SPAWN_X = {380, 150, 600};
-    private static final double[] SPAWN_Y = {280, 150, 400};
+    public static final int NOMBRE_MONSTRES = GameConstants.MONSTER_SPAWNS.length;
 
     private final Connection connexion;
 
@@ -21,7 +20,7 @@ public class GestionnairesMonstres {
     }
 
     /**
-     * Si la table est vide, insère NOMBRE_MONSTRES lignes avec les positions de spawn.
+     * Si la table n'a pas tous les monstres, la recrée avec les positions de spawn.
      * Dans tous les cas, retourne la liste complète lue depuis la DB.
      */
     public List<DonneesMonstre> initialiser() throws SQLException {
@@ -31,12 +30,13 @@ public class GestionnairesMonstres {
             rs.next();
             count = rs.getInt(1);
         }
-        if (count == 0) {
+        if (count != NOMBRE_MONSTRES) {
+            reinitialiser();
             try (PreparedStatement ps = connexion.prepareStatement(
                     "INSERT INTO monstres (x, y) VALUES (?, ?)")) {
                 for (int i = 0; i < NOMBRE_MONSTRES; i++) {
-                    ps.setDouble(1, SPAWN_X[i]);
-                    ps.setDouble(2, SPAWN_Y[i]);
+                    ps.setDouble(1, GameConstants.MONSTER_SPAWNS[i][0]);
+                    ps.setDouble(2, GameConstants.MONSTER_SPAWNS[i][1]);
                     ps.executeUpdate();
                 }
             }
@@ -67,7 +67,7 @@ public class GestionnairesMonstres {
     public List<DonneesMonstre> lireTousLesMonstres() throws SQLException {
         List<DonneesMonstre> monstres = new ArrayList<>();
         try (PreparedStatement ps = connexion.prepareStatement(
-                "SELECT id, x, y FROM monstres")) {
+                "SELECT id, x, y FROM monstres ORDER BY id")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 monstres.add(new DonneesMonstre(
