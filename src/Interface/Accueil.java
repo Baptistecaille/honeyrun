@@ -15,29 +15,24 @@ import javax.swing.JOptionPane;
 import java.awt.Font;
 import java.io.File;
 
-/**
- *
- * @author cpoussie
- */
+
 public class Accueil extends javax.swing.JFrame {
     // Initialise la fenêtre
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Accueil.class.getName());
     
 
     public Accueil() {
-        // Changement du chemin de l'image de fond de golbal à relatif pour éviter les problèmes de portabilité
-        setContentPane(new BackgroundPanel("src/Interface/honey_background.png")); 
-        initComponents();
-        Font luckiestBase = null;
+        setContentPane(new BackgroundPanel("src/Interface/honey_background.png")); // Met une image en arrière-plan grâce à une image téléchargée
+        initComponents(); // Initialise les composants
+        Font luckiestBase = null; // Définition d'une variable de type police d'écriture
 
         try {
-            luckiestBase = Font.createFont(
-                Font.TRUETYPE_FONT,
-                new File("src/Interface/luckiest-guy/luckiestguy.ttf")
-                );
+            luckiestBase = Font.createFont(Font.TRUETYPE_FONT, new File("src/Interface/luckiest-guy/luckiestguy.ttf")); // Importation d'une nouvelle police d'écriture
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(e); // Arrêt du programme si la police ne peut pas être chargée
             }
+        
+    // Application de la police    
     jLabel1.setFont(luckiestBase.deriveFont(64f));
     jLabel2.setFont(luckiestBase.deriveFont(28f));
     jLabel3.setFont(luckiestBase.deriveFont(18f));
@@ -121,12 +116,14 @@ public class Accueil extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String nom = jTextField2.getText(); //Récupérer le nom entré par l'utilisateur
+        String nom = jTextField2.getText(); //Récupére le nom entré par l'utilisateur
 
+        // Interrompt la méthode si aucune valeur n’est disponible
         if (nom == null) {
             return;
         }
 
+        // Connexion à la base de données
         try {
             Connection connexion = DriverManager.getConnection(
                 "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
@@ -134,83 +131,105 @@ public class Accueil extends javax.swing.JFrame {
                 "YTDTvj9TR3CDYCmP"
         );
 
-        // Vérifier combien de joueurs existent
+        // Requête permettant de compter le nombre de joueurs déjà enregistrés
         PreparedStatement compteur = connexion.prepareStatement(
             "SELECT COUNT(*) AS total FROM `character`"
         );
-        ResultSet countRs = compteur.executeQuery();
+        ResultSet countRs = compteur.executeQuery(); // Résultat de la requête
         countRs.next();
         
-        int total = countRs.getInt("total");
+        int total = countRs.getInt("total"); // Stocke le résultat dans la variable "total"
+        
+        // Coordonnées initiales du point d’apparition
         int spawnX = 0;
         int spawnY = 0;
 
+        // Définition des coordonnées des 4 spawns (le premier joueur a se connecter aura le cas 1, le deuxième le cas 2, etc...)
         switch (total) {
-            case 0: spawnX = 95; spawnY = 95; break;
-            case 1: spawnX = 1825; spawnY = 993; break;
-            case 2: spawnX = 1825; spawnY = 95; break;
-            case 3: spawnX = 95; spawnY = 993; break;
+            case 0: 
+                spawnX = 95; 
+                spawnY = 95; 
+                break;
+                
+            case 1: 
+                spawnX = 1825; 
+                spawnY = 993; 
+                break;
+                
+            case 2: 
+                spawnX = 1825; 
+                spawnY = 95; 
+                break;
+                
+            case 3: 
+                spawnX = 95; 
+                spawnY = 993; 
+                break;
+                
+            // Refuse l'accès si la partie est déjà pleine
             default:
                 JOptionPane.showMessageDialog(this, "La partie est déjà pleine !");
                 connexion.close();
                 return;
         }
+        
+        // Identifiant du joueur qui sera généré par la base de données
         int playerId;
 
-        if (total < 4) {
+        
+        if (total < 4) { // Vérifie qu'il reste une place dans la partie
             // Créer une nouvelle ligne vide
             PreparedStatement nv = connexion.prepareStatement(
                 "INSERT INTO `character` (pseudo, spawnX, spawnY, X, Y, lifes, hasWin, hasHoney, skin) VALUES (?, ?, ?, ?, ?, 3, 0, 0, NULL)",
                 Statement.RETURN_GENERATED_KEYS
             );
         
+        // Ajout de différentes informations dans le table SQL
         nv.setString(1, nom);
         nv.setInt(2, spawnX);
         nv.setInt(3, spawnY);
-        nv.setInt(4, spawnX); // position actuelle = spawn
+        nv.setInt(4, spawnX); // Position actuelle = spawn
         nv.setInt(5, spawnY);
-        nv.executeUpdate();
+        nv.executeUpdate(); // Execution de la requête d'insertion
 
-    ResultSet generatedKeys = nv.getGeneratedKeys();
+    ResultSet generatedKeys = nv.getGeneratedKeys(); // Récupère l'identifiant généré automatiquement dans la table 
     if (generatedKeys.next()) {
-        playerId = generatedKeys.getInt(1);
+        playerId = generatedKeys.getInt(1); // Stocke son identifiant
     } else {
         throw new SQLException("Impossible de récupérer l'ID du nouveau joueur.");
     }
 
     } else {
-        JOptionPane.showMessageDialog(this, "La partie est déjà pleine !");
-        connexion.close();
+        JOptionPane.showMessageDialog(this, "La partie est déjà pleine !"); // Affiche un message disant que la partie est déjà pleine
+        connexion.close(); // Fermeture de la connexion
         return;
         }
 
-// Maintenant mettre le pseudo dans la ligne créée
-        PreparedStatement update = connexion.prepareStatement(
-        "UPDATE `character` SET pseudo = ? WHERE id = ?"
-        );
-        update.setString(1, nom);
-        update.setInt(2, playerId);
+//        // Maintenant mettre le pseudo dans la ligne créée
+//        PreparedStatement update = connexion.prepareStatement(
+//        "UPDATE `character` SET pseudo = ? WHERE id = ?"
+//        );
+//        
+//        // Met à jour le nom et l'identifiant dans la table
+//        update.setString(1, nom);
+//        update.setInt(2, playerId);
+//
+//
+//        update.executeUpdate(); // Exécute la mise à jour
+//
+//        connexion.close();
+//        
 
-        //Assigner pseudo à cette ligne
+        PlayerSQL p = new PlayerSQL(playerId, nom, null); // Création de l’objet représentant le joueur connecté. Le skin est encore nul car il n’a pas encore été sélectionné
 
-        update.setString(1, nom);
-        update.setInt(2, playerId);
-        update.executeUpdate();
-
-        connexion.close();
-        
-
-        // Créer un PlayerSQL pour le passer à Skin
-        PlayerSQL p = new PlayerSQL(playerId, nom, null);
-
-        // Ouvrir la fenêtre de choix du skin
+      
         Skin skin = new Skin(p);
-        skin.setVisible(true);
-        this.dispose();
+        skin.setVisible(true); // Ouvrir la fenêtre de choix du skin
+        this.dispose(); // Ferme cette fenêtre
             
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Erreur SQL : " + e.getMessage());
+            e.printStackTrace(); // Affiche les erreurs dans la console
+            JOptionPane.showMessageDialog(this, "Erreur SQL : " + e.getMessage()); // Affiche un message d'erreur
     
         }
 

@@ -22,6 +22,10 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+
 import multiplayer.DonneesJoueur;
 import multiplayer.GestionnaireJoueurs;
 
@@ -43,6 +47,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private volatile ArrayList<DonneesJoueur> autresJoueurs;
     private BufferedImage[] spritesParSkin;
 
+
     public FenetreDeJeu(DonneesJoueur moi, GestionnaireJoueurs gestionnaire) {
         this.setSize(GameConstants.SCREEN_WIDTH, GameConstants.SCREEN_HEIGHT);
         this.setResizable(false);
@@ -62,6 +67,12 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
         this.gestionnaire = gestionnaire;
         this.joueurId = moi.id;
+
+        this.partieFinie = false;
+        this.autresJoueurs = new ArrayList<>();
+        this.spritesParSkin = chargerSpritesJoueurs();
+
+
         this.partieFinie = false;
         this.autresJoueurs = new ArrayList<>();
         this.spritesParSkin = chargerSpritesJoueurs();
@@ -134,8 +145,32 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         return sprites;
     }
 
+    /**
+ * Rend tous les avatars disponibles à la fin de la partie.
+ */
+    private void reinitialiserDisponibilites() {
+
+        try (
+            Connection connexion = DriverManager.getConnection(
+                "jdbc:mariadb://nemrod.ens2m.fr:3306/2025-2026_s2_vs1_tp1_honey_run",
+                "etudiant",
+                "YTDTvj9TR3CDYCmP"
+            );
+
+            PreparedStatement requete = connexion.prepareStatement(
+                "UPDATE Characters SET Disponibilité = 1"
+            )
+        ) {
+            requete.executeUpdate();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     private void arreter() {
         partieFinie = true;
+
         jeu.stopMonstres();
         jeu.getPlayer().stopMovement();
         try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
@@ -196,6 +231,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
                             gestionnaire.signalerVictoire(joueurId);
                             gestionnaire.deconnecter(joueurId);
+//                            reinitialiserDisponibilites();
                             gestionnaire.reinitialiser();
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
@@ -211,6 +247,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             if (gagnant != null && marquerPartieFinie()) {
                                 final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
                                 gestionnaire.deconnecter(joueurId);
+//                                reinitialiserDisponibilites(); // Remet les disponibilités à 1
                                 gestionnaire.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override
@@ -313,8 +350,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
             this.jeu.getPlayer().setToucheHaut(false);
         }
     }
+
 }
-
-
 
   
