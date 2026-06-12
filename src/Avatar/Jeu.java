@@ -135,7 +135,7 @@ public class Jeu {
         private void renduMiniMap(Graphics2D contexte, int largeurEcran, int hauteurEcran) {
         if (minimap == null) return;
         int x = largeurEcran - minimap.getWidth()  - 15;
-        int y = hauteurEcran - minimap.getHeight() - 15;
+        int y = hauteurEcran - minimap.getHeight() - 830;
         contexte.drawImage(minimap, x, y, null);
     }
 
