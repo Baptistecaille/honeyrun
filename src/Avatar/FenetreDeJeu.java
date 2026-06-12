@@ -210,18 +210,9 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
             public void run() {
                 while (!partieFinie) {
                     try {
-                        // On lit la DB avant d'écrire pour détecter un éventuel vol du miel
-                        ArrayList<DonneesJoueur> joueursSynchronises = new ArrayList<>(gestionnaire.lireTousLesJoueurs());
-                        autresJoueurs = joueursSynchronises;
-
-                        // Si la DB indique qu'on n'a plus le miel alors qu'on croyait l'avoir alors vol détecté
-                        for (DonneesJoueur j : joueursSynchronises) {
-                            if (j.id == joueurId && !j.hasHoney && jeu.getPlayer().hasHoney()) {
-                                jeu.getPlayer().onMielVole(); // retire le miel localement et applique le stop mouvement
-                                break;
-                            }
-                        }
-                        
+                        // On écrit notre état en DB EN PREMIER, puis on lit.
+                        // Si on lit avant d'écrire, un hasHoney=true fraîchement récolté n'est pas encore en DB,
+                        // et la détection de vol ci-dessous appelle onMielVole() à tort.
                         gestionnaire.mettreAJourPosition(
                             joueurId,
                             jeu.getPlayer().getX(),
@@ -230,9 +221,24 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             jeu.getPlayer().getLives()
                         );
 
+                        ArrayList<DonneesJoueur> joueursSynchronises = new ArrayList<>(gestionnaire.lireTousLesJoueurs());
+                        autresJoueurs = joueursSynchronises;
+
+                        // Si la DB indique qu'on n'a plus le miel alors qu'on croyait l'avoir → vol détecté
+                        for (DonneesJoueur j : joueursSynchronises) {
+                            if (j.id == joueurId && !j.hasHoney && jeu.getPlayer().hasHoney()) {
+                                jeu.getPlayer().onMielVole();
+                                break;
+                            }
+                        }
+
                         // On transmet la liste des joueurs au Jeu et au Player pour l'affichage et les collisions
                         jeu.setAutresJoueurs(joueursSynchronises);
-                        jeu.getPlayer().setAutresJoueurs(joueursSynchronises);
+                        ArrayList<DonneesJoueur> autresSeulement = new ArrayList<>();
+                        for (DonneesJoueur j : joueursSynchronises) {
+                            if (j.id != joueurId) autresSeulement.add(j);
+                        }
+                        jeu.getPlayer().setAutresJoueurs(autresSeulement);
 
                         ArrayList<DonneesJoueur> joueursPourMonstres = new ArrayList<>();
                         for (int i = 0; i < joueursSynchronises.size(); i++) {
