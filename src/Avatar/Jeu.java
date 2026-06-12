@@ -42,6 +42,7 @@ public class Jeu {
     private Carte calque3;
     private BufferedImage minimap;
     private CollisionMap collisionMap;
+    
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
         // On crée une nouvelle image (TYPE_INT_ARGB)
@@ -66,7 +67,7 @@ public class Jeu {
         this.honey =new Honey();
         this.collisionMap = new CollisionMap("src/TileMapping/Calque111920_1.txt");
         //this.calque3 = new Carte("src/TileMapping/Calque31920.txt");
-        this.minimap = this.calque2.genererImageMiniMap(300, 225);
+        
         this.score = 0;
 
         // On accepte soit la ressource empaquetee, soit le fichier present dans le projet pour rester runnable en dev.
@@ -95,6 +96,8 @@ public class Jeu {
         P1.startMovement();
         this.player = P1;
         this.player.setCollisionMap(this.collisionMap);
+        this.minimap = this.calque2.genererImageMiniMapAvecPointTuile(300, 225, this.player.getX(), this.player.getY(),Color.BLACK);
+        
     }
 
     private BufferedImage chargerSprite(int skinId) {
@@ -163,8 +166,8 @@ public class Jeu {
             this.honey.setY(GameConstants.LOCAL_PLAYER_SCREEN_Y - GameConstants.PLAYER_SIZE/2);   
         }
         this.honey.rendu(contexte);
+        this.calque2.afficherCoeurs(contexte, this.player.getLives());
     }
-
     public int worldToScreenX(double worldX) {
         int cameraTileX = (int) (this.player.getPosition().getX() / (double) TILE_SIZE);
         return (int) Math.round(MAP_ZOOM * (worldX - cameraTileX * TILE_SIZE + CAMERA_OFFSET_TILES_X * TILE_SIZE));

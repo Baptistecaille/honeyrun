@@ -21,6 +21,7 @@ public class Jeu {
     private Carte calque2;
     private Carte calque3;
     private Avatar avatar1;
+    
      
     public Jeu() {        
         this.calque1 = new Carte("src/TileMapping/Calque11920.txt");
