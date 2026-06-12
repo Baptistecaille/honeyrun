@@ -182,11 +182,43 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private void arreter() {
         partieFinie = true;
 
+        if (timer != null) {
+            timer.stop();
+        }
         jeu.stopMonstres();
         jeu.getPlayer().stopMovement();
         try { gestionnaire.deconnecter(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
         dispose();
         System.exit(0);
+    }
+
+    private void arreterPartieTerminee() {
+        partieFinie = true;
+
+        if (timer != null) {
+            timer.stop();
+        }
+        jeu.stopMonstres();
+        jeu.getPlayer().stopMovement();
+        dispose();
+    }
+
+    private void programmerNettoyageFinPartie() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                    reinitialiserDisponibilites();
+                    gestionnaireMonstres.reinitialiser();
+                    gestionnaire.reinitialiser();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }, "end-game-cleanup").start();
     }
 
     private synchronized boolean marquerPartieFinie() {
@@ -261,15 +293,12 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
                         if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
                             gestionnaire.signalerVictoire(joueurId);
-                            gestionnaire.deconnecter(joueurId);
-                            reinitialiserDisponibilites();
-                            gestionnaireMonstres.reinitialiser();
-                            gestionnaire.reinitialiser();
+                            programmerNettoyageFinPartie();
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
                                     JOptionPane.showMessageDialog(FenetreDeJeu.this, "Vous avez gagné !");
-                                    arreter();
+                                    arreterPartieTerminee();
                                 }
                             });
                         }
@@ -278,15 +307,11 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             String gagnant = gestionnaire.detecterVictoire();
                             if (gagnant != null && marquerPartieFinie()) {
                                 final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
-                                gestionnaire.deconnecter(joueurId);
-                                reinitialiserDisponibilites(); // Remet les disponibilités à 1
-                                gestionnaireMonstres.reinitialiser();
-                                gestionnaire.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override
                                     public void run() {
                                         JOptionPane.showMessageDialog(FenetreDeJeu.this, nomGagnant + " a gagné !");
-                                        arreter();
+                                        arreterPartieTerminee();
                                     }
                                 });
                             }
