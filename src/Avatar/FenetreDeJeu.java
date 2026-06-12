@@ -231,7 +231,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
                             gestionnaire.signalerVictoire(joueurId);
                             gestionnaire.deconnecter(joueurId);
-//                            reinitialiserDisponibilites();
+                            reinitialiserDisponibilites();
                             gestionnaire.reinitialiser();
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
@@ -247,7 +247,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             if (gagnant != null && marquerPartieFinie()) {
                                 final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
                                 gestionnaire.deconnecter(joueurId);
-//                                reinitialiserDisponibilites(); // Remet les disponibilités à 1
+                                reinitialiserDisponibilites(); // Remet les disponibilités à 1
                                 gestionnaire.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override
