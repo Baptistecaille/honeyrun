@@ -204,11 +204,12 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
     private DonneesJoueur creerDonneesJoueurLocal() {
         Player player = jeu.getPlayer();
+        double[] position = player.getPositionSnapshot();
         return new DonneesJoueur(
             joueurId,
             player.getName(),
-            player.getX(),
-            player.getY(),
+            position[0],
+            position[1],
             player.getSpawn().getX(),
             player.getSpawn().getY(),
             0,
@@ -256,10 +257,11 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         // On écrit notre état en DB EN PREMIER, puis on lit.
                         // Si on lit avant d'écrire, un hasHoney=true fraîchement récolté n'est pas encore en DB,
                         // et la détection de vol ci-dessous appelle onMielVole() à tort.
+                        double[] positionLocale = jeu.getPlayer().getPositionSnapshot();
                         gestionnaire.mettreAJourPosition(
                             joueurId,
-                            jeu.getPlayer().getX(),
-                            jeu.getPlayer().getY(),
+                            positionLocale[0],
+                            positionLocale[1],
                             jeu.getPlayer().getLives()
                         );
 

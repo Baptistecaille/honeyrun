@@ -121,41 +121,42 @@ public class Player extends Avatar {
     public void miseAJour(double dt, CollisionMap map) {
         // Si le joueur vient de se faire voler le miel, on stop son mouvement pendant 0.5 seconde pour lui laisser le temps de réagir et éviter les vols en chaîne instantanés
         if (System.currentTimeMillis() < stopMvtUntil) return;
-        int col = (int)(this.position.getX() / TILE_SIZE); // colonne de tuile
-        int row = (int)(this.position.getY() / TILE_SIZE); // ligne de tuile
-        double speedFactor = map.getSpeedFactor(col, row); // facteur de vitesse ralenti ou pas en fonction des tuiles (tuile 414)
-        if (this.toucheGauche){
-            double x = this.getPosition().getX();
-            double newX= x - (1*this.speed *speedFactor * TILE_SIZE * dt);
-            col = (int)(newX / TILE_SIZE);
-            if (!map.isMur(col,row)){ // tuiles 415
-                this.position.setX(newX);
+        synchronized (position) {
+            int col = (int)(this.position.getX() / TILE_SIZE); // colonne de tuile
+            int row = (int)(this.position.getY() / TILE_SIZE); // ligne de tuile
+            double speedFactor = map.getSpeedFactor(col, row); // facteur de vitesse ralenti ou pas en fonction des tuiles (tuile 414)
+            if (this.toucheGauche){
+                double x = this.position.getX();
+                double newX= x - (1*this.speed *speedFactor * TILE_SIZE * dt);
+                col = (int)(newX / TILE_SIZE);
+                if (!map.isMur(col,row)){ // tuiles 415
+                    this.position.setX(newX);
+                }
             }
-        }
-        if (this.toucheDroite){
-            double x = this.getPosition().getX();
-            double newX= x+ (1*this.speed * speedFactor * TILE_SIZE * dt);
-            col = (int)(newX / TILE_SIZE);
-            if (!map.isMur(col,row)){
-                this.position.setX(newX);
+            if (this.toucheDroite){
+                double x = this.position.getX();
+                double newX= x+ (1*this.speed * speedFactor * TILE_SIZE * dt);
+                col = (int)(newX / TILE_SIZE);
+                if (!map.isMur(col,row)){
+                    this.position.setX(newX);
+                }
             }
-        }
-        if (this.toucheBas){
-            double y = this.getPosition().getY();
-            double newY = y+ (1*this.speed* speedFactor * TILE_SIZE * dt);
-             row = (int)(newY / TILE_SIZE);
-            if (!map.isMur(col,row)){
-                this.position.setY(newY);
+            if (this.toucheBas){
+                double y = this.position.getY();
+                double newY = y+ (1*this.speed* speedFactor * TILE_SIZE * dt);
+                 row = (int)(newY / TILE_SIZE);
+                if (!map.isMur(col,row)){
+                    this.position.setY(newY);
+                }
             }
-        }
-        if (this.toucheHaut){
-            double y = this.getPosition().getY();
-            double newY = y - (1*this.speed * speedFactor * TILE_SIZE * dt);
-             row = (int)(newY / TILE_SIZE);
-            if (!map.isMur(col,row)){
-                this.position.setY(newY);
+            if (this.toucheHaut){
+                double y = this.position.getY();
+                double newY = y - (1*this.speed * speedFactor * TILE_SIZE * dt);
+                 row = (int)(newY / TILE_SIZE);
+                if (!map.isMur(col,row)){
+                    this.position.setY(newY);
+                }
             }
-        }
 //        if (this.getPosition().getX()> GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE){// collision avec le bord droit de la scene, taille de la hitbox
 //            this.position.setX( GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE);
 //        }
@@ -170,6 +171,7 @@ public class Player extends Avatar {
 //        }
  // les lignes précédentes étaient au début quand on avait pas les collisions
         }
+    }
     
     public void setCollisionMap(CollisionMap map) {
         this.collisionMap = map;
@@ -341,6 +343,11 @@ public class Player extends Avatar {
 
     public double getX() { synchronized (position) { return position.getX(); } }
     public double getY() { synchronized (position) { return position.getY(); } }
+    public double[] getPositionSnapshot() {
+        synchronized (position) {
+            return new double[] { position.getX(), position.getY() };
+        }
+    }
 //    public double getXTiles() { synchronized (position) { return position.getX()/TILE_SIZE; }}
 //    public double getYTiles() { synchronized (position) { return position.getY()/TILE_SIZE; }}
     public double getMaxSpeed() { return speed; }
