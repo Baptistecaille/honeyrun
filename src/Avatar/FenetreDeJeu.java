@@ -217,7 +217,6 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             joueurId,
                             jeu.getPlayer().getX(),
                             jeu.getPlayer().getY(),
-                            jeu.getPlayer().hasHoney(),
                             jeu.getPlayer().getLives()
                         );
 

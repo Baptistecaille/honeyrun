@@ -243,6 +243,10 @@ public class Player extends Avatar {
         for (Monsters monster : monsters) {
             if (overlaps(hitbox, monster.getHitbox())) {
                 lives = Math.max(0, lives - 1);
+                // Si on avait le miel, on le remet à 0 explicitement en DB pour que le pot réapparaisse
+                if (hasHoney && gestionnaire != null) {
+                    try { gestionnaire.perdreLeHmiel(joueurId); } catch (SQLException ex) { ex.printStackTrace(); }
+                }
                 hasHoney = false;
                 isHarvesting = false;
                 harvestStartTime = 0;

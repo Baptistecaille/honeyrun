@@ -84,15 +84,25 @@ public class GestionnaireJoueurs {
     /**
      * Écrit la position et l'état du joueur local en DB.
      */
-    public void mettreAJourPosition(int id, double x, double y, boolean hasHoney, int lifes)
+    // hasHoney n'est plus écrit ici : seuls recolterMiel(), volerMiel() et perdreLeHmiel() modifient cette colonne
+    // (évite que le thread de sync écrase un vol en réécrivant l'ancien état local)
+    public void mettreAJourPosition(int id, double x, double y, int lifes)
             throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET X=?, Y=?, hasHoney=?, lifes=? WHERE id=?")) {
+                "UPDATE `character` SET X=?, Y=?, lifes=? WHERE id=?")) {
             ps.setDouble(1, x);
             ps.setDouble(2, y);
-            ps.setDouble(3, hasHoney ? 1.0 : 0.0);
-            ps.setInt(4, lifes);
-            ps.setInt(5, id);
+            ps.setInt(3, lifes);
+            ps.setInt(4, id);
+            ps.executeUpdate();
+        }
+    }
+
+    // Remet hasHoney à 0 quand un monstre touche le porteur (appelé explicitement depuis Player)
+    public void perdreLeHmiel(int id) throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "UPDATE `character` SET hasHoney=0 WHERE id=?")) {
+            ps.setInt(1, id);
             ps.executeUpdate();
         }
     }
