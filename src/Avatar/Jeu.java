@@ -10,8 +10,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -42,6 +40,9 @@ public class Jeu {
     private Carte calque3;
     private BufferedImage minimap;
     private CollisionMap collisionMap;
+
+    // Liste des autres joueurs pour savoir qui porte le miel et afficher le pot au-dessus du porteur
+    private volatile ArrayList<DonneesJoueur> autresJoueurs = new ArrayList<>();
     
 
     private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
@@ -72,6 +73,18 @@ public class Jeu {
 
         // On accepte soit la ressource empaquetee, soit le fichier present dans le projet pour rester runnable en dev.
         BufferedImage sprite = chargerSprite(skinId);
+        // Chargement du sprite des monstres depuis son chemin direct
+        BufferedImage monsterSprite = null;
+        try {
+            monsterSprite = redimensionner(ImageIO.read(new File("src/resources/Abeille.png")), GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+        }
+        catch (IOException ex) {
+                monsterSprite = new BufferedImage(GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = monsterSprite.createGraphics();
+                g2d.setColor(Color.BLACK);
+                g2d.fillRect(0, 0, GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE);
+                g2d.dispose();
+        }
 
         this.monsters = new ArrayList<>();
         double[][] monsterSpawns = GameConstants.MONSTER_SPAWNS;
@@ -83,6 +96,7 @@ public class Jeu {
             m.startMovement();
             m.setCollisionMap(collisionMap);
             m.setColor(Color.BLACK);
+            m.setImage(monsterSprite);
             this.monsters.add(m);
         }
 
@@ -122,9 +136,8 @@ public class Jeu {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(Jeu.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("Erreur lors du chargement du sprite : " + ex.getMessage());
         }
-
         BufferedImage placeholder = new BufferedImage(GameConstants.SPRITE_SIZE, GameConstants.SPRITE_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = placeholder.createGraphics();
         g2d.setColor(Color.MAGENTA);
@@ -158,14 +171,24 @@ public class Jeu {
             (int)(player.getHitbox().getWidth()  * MAP_ZOOM),
             (int)(player.getHitbox().getHeight() * MAP_ZOOM));
         renduMiniMap(contexte, largeurEcran, hauteurEcran);
-        if (!this.player.hasHoney()){
-            this.honey.setX(worldToScreenX(GameConstants.HIVE_X)); 
-            this.honey.setY(worldToScreenY(GameConstants.HIVE_Y));}
-        else {
-            this.honey.setX(GameConstants.LOCAL_PLAYER_SCREEN_X + GameConstants.PLAYER_SIZE );
-            this.honey.setY(GameConstants.LOCAL_PLAYER_SCREEN_Y - GameConstants.PLAYER_SIZE/2);   
+        // On vérifie si un autre joueur porte le miel
+        boolean autreJoueurALeMiel = false;
+        for (DonneesJoueur j : autresJoueurs) {
+            if (j.hasHoney) { autreJoueurALeMiel = true; break; }
         }
-        this.honey.rendu(contexte);
+
+        if (this.player.hasHoney()) {
+            // Si le joueur local porte le miel : on l'affiche en mini à côté de son sprite
+            this.honey.setX(GameConstants.LOCAL_PLAYER_SCREEN_X + GameConstants.PLAYER_SIZE);
+            this.honey.setY(GameConstants.LOCAL_PLAYER_SCREEN_Y - GameConstants.PLAYER_SIZE / 2);
+            this.honey.rendu(contexte);
+        } else if (!autreJoueurALeMiel) {
+            // Personne n'a le miel, on met le pot en position centrale sur la carte
+            this.honey.setX(worldToScreenX(GameConstants.HIVE_X));
+            this.honey.setY(worldToScreenY(GameConstants.HIVE_Y));
+            this.honey.rendu(contexte);
+        }
+        // Si un autre joueur porte le miel : pot central non affiché
         this.calque2.afficherCoeurs(contexte, this.player.getLives());
     }
     public int worldToScreenX(double worldX) {
@@ -187,10 +210,15 @@ public class Jeu {
         for (Monsters monster : this.monsters) {
             int x = worldToScreenX(monster.getX());
             int y = worldToScreenY(monster.getY());
-            int w = (int) Math.round(monster.getHitbox().getWidth());
-            int h = (int) Math.round(monster.getHitbox().getHeight());
-            contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK); // Si la couleur du monstre n'est pas définie, on utilise le noir par défaut.
-            contexte.fillRect(x, y, w * MAP_ZOOM, h * MAP_ZOOM);
+            int w = (int) Math.round(monster.getHitbox().getWidth()) * MAP_ZOOM; // on applique le zoom à la taille du hitbox pour que le sprite corresponde à la hitbox
+            int h = (int) Math.round(monster.getHitbox().getHeight()) * MAP_ZOOM; // même chose pour la hauteur
+            // Si le monstre a un sprite, on l'affiche ; sinon on replie sur un rectangle de couleur.
+            if (monster.getImage() != null) {
+                contexte.drawImage(monster.getImage(), x, y, w, h, null); // on dessine le sprite du monstre
+            } else {
+                contexte.setColor(monster.getColor() != null ? monster.getColor() : Color.BLACK); // si le monstre n'a pas d'image et pas de couleur, on utilise le noir par défaut
+                contexte.fillRect(x, y, w, h);
+            }
         }
     }
 
@@ -213,6 +241,16 @@ public class Jeu {
 
     public Player getPlayer() {
         return this.player;
+    }
+
+    // Met à jour la liste des autres joueurs pour savoir qui porte le miel
+    public void setAutresJoueurs(ArrayList<DonneesJoueur> joueurs) {
+        this.autresJoueurs = joueurs != null ? joueurs : new ArrayList<>();
+    }
+
+    // Retourne le sprite du pot de miel pour l'afficher en mini au-dessus du porteur dans FenetreDeJeu
+    public BufferedImage getHoneySprite() {
+        return honey.getSprite();
     }
 
     public void mettreAJourJoueursPourMonstres(ArrayList<DonneesJoueur> joueurs) {

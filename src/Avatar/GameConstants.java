@@ -30,11 +30,16 @@ public final class GameConstants {
     public static final double SPAWN_ZONE_SIZE = 96.0;
 
 
-    // TO MODIFY 
+    // 4 groupes de 4 monstres au milieu de chaque bord, loin des spawns joueurs (coins)
     public static final double[][] MONSTER_SPAWNS = {
-        {384.0, 288.0},
-        {160.0, 160.0},
-        {608.0, 416.0}
+        // Milieu bord supérieur
+        { 928.0,  96.0}, { 992.0,  96.0}, { 928.0, 160.0}, { 992.0, 160.0},
+        // Milieu bord droit
+        {1696.0, 512.0}, {1760.0, 512.0}, {1696.0, 576.0}, {1760.0, 576.0},
+        // Milieu bord inférieur
+        { 928.0, 896.0}, { 992.0, 896.0}, { 928.0, 960.0}, { 992.0, 960.0},
+        // Milieu bord gauche
+        {  96.0, 512.0}, { 160.0, 512.0}, {  96.0, 576.0}, { 160.0, 576.0}
     };
 
     private GameConstants() {
