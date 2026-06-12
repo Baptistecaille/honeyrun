@@ -22,6 +22,7 @@ public class GestionnaireJoueurs {
     // Coordonnées de spawn fixes par numéro d'avatar 60x34 tuiles (1920x1088 pixels)
     private static final double[] SPAWN_X = {95, 1825, 95,  1825}; // to modify accoording to the map area
     private static final double[] SPAWN_Y = {95, 95,  993, 993}; // to modify accoording to the map area
+    private static final String VERROU_MIEL = "honeyrun_unique_honey";
 
     private final Connection connexion;
 
@@ -100,10 +101,18 @@ public class GestionnaireJoueurs {
 
     // Remet hasHoney à 0 quand un monstre touche le porteur (appelé explicitement depuis Player)
     public void perdreLeHmiel(int id) throws SQLException {
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=0 WHERE id=?")) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
+        boolean verrouPris = obtenirVerrouMiel();
+        if (!verrouPris) {
+            throw new SQLException("Impossible d'obtenir le verrou du miel.");
+        }
+        try {
+            try (PreparedStatement ps = connexion.prepareStatement(
+                    "UPDATE `character` SET hasHoney=0 WHERE id=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+        } finally {
+            relacherVerrouMiel();
         }
     }
 
@@ -146,20 +155,72 @@ public class GestionnaireJoueurs {
         }
     }
 
+    private boolean obtenirVerrouMiel() throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement("SELECT GET_LOCK(?, 2)")) {
+            ps.setString(1, VERROU_MIEL);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() && rs.getInt(1) == 1;
+        }
+    }
+
+    private void relacherVerrouMiel() throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement("SELECT RELEASE_LOCK(?)")) {
+            ps.setString(1, VERROU_MIEL);
+            ps.executeQuery();
+        }
+    }
+
+    private boolean existePorteurMiel() throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "SELECT COUNT(*) FROM `character` WHERE hasHoney = 1")) {
+            ResultSet rs = ps.executeQuery();
+            return rs.next() && rs.getInt(1) > 0;
+        }
+    }
+
+    private boolean joueurPorteMiel(int id) throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "SELECT COUNT(*) FROM `character` WHERE id = ? AND hasHoney = 1")) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() && rs.getInt(1) == 1;
+        }
+    }
+
+    private boolean attribuerMielUniquementA(int id) throws SQLException {
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "UPDATE `character` SET hasHoney = CASE WHEN id = ? THEN 1 ELSE 0 END")) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "SELECT COUNT(*) FROM `character` WHERE id = ? AND hasHoney = 1")) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() && rs.getInt(1) == 1;
+        }
+    }
+
     /**
      * Attribue le miel au joueur uniquement si personne d'autre ne l'a déjà.
      * Le UPDATE atomique garantit qu'un seul joueur obtient le miel même si deux terminent la récolte en même temps.
      * Retourne true si le miel a bien été attribué, false si quelqu'un d'autre l'a déjà pris.
      */
     public boolean recolterMiel(int id) throws SQLException {
-        // On attribue le miel uniquement si aucun autre joueur ne l'a (sous-requête dans le WHERE pour atomicité)
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=1 WHERE id=? " +
-                "AND 0=(SELECT COUNT(*) FROM (SELECT id FROM `character` WHERE hasHoney=1 AND id!=?) AS t)")) {
-            ps.setInt(1, id);
-            ps.setInt(2, id);
-            int rows = ps.executeUpdate();
-            return rows > 0; // 0 ligne modifiée = quelqu'un d'autre avait déjà le miel
+        boolean verrouPris = obtenirVerrouMiel();
+        if (!verrouPris) {
+            throw new SQLException("Impossible d'obtenir le verrou du miel.");
+        }
+        try {
+            if (existePorteurMiel()) {
+                if (joueurPorteMiel(id)) {
+                    return attribuerMielUniquementA(id);
+                }
+                return false;
+            }
+            return attribuerMielUniquementA(id);
+        } finally {
+            relacherVerrouMiel();
         }
     }
 
@@ -169,20 +230,18 @@ public class GestionnaireJoueurs {
      * Retourne true si le vol a réussi, false si le porteur n'avait plus le miel (quelqu'un d'autre plus rapide).
      */
     public boolean volerMiel(int idVoleur, int idPorteur) throws SQLException {
-        // On retire le miel du porteur uniquement s'il l'a encore (protection contre double-vol simultané)
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=0 WHERE id=? AND hasHoney=1")) {
-            ps.setInt(1, idPorteur);
-            int rows = ps.executeUpdate();
-            if (rows == 0) return false; // trop tard, quelqu'un d'autre a déjà volé
+        boolean verrouPris = obtenirVerrouMiel();
+        if (!verrouPris) {
+            throw new SQLException("Impossible d'obtenir le verrou du miel.");
         }
-        // Vol réussi : on donne le miel au voleur
-        try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE `character` SET hasHoney=1 WHERE id=?")) {
-            ps.setInt(1, idVoleur);
-            ps.executeUpdate();
+        try {
+            if (!joueurPorteMiel(idPorteur)) {
+                return false;
+            }
+            return attribuerMielUniquementA(idVoleur);
+        } finally {
+            relacherVerrouMiel();
         }
-        return true;
     }
 
     /**

@@ -51,6 +51,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
     private GestionnairesMonstres gestionnaireMonstres;
     private List<DonneesMonstre> referencesMonstres;
     private BufferedImage[] spritesParSkin;
+    private static final int VICTORY_ANNOUNCEMENT_DELAY_MS = 1500;
 
 
     public FenetreDeJeu(DonneesJoueur moi, GestionnaireJoueurs gestionnaire) {
@@ -294,7 +295,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
 
                         if (jeu.getPlayer().isWon() && marquerPartieFinie()) {
                             gestionnaire.signalerVictoire(joueurId);
-                            gestionnaire.deconnecter(joueurId);
+                            Thread.sleep(VICTORY_ANNOUNCEMENT_DELAY_MS);
                             reinitialiserDisponibilites();
                             gestionnaire.reinitialiser();
                             if (gestionnaireMonstres != null) gestionnaireMonstres.reinitialiser();
@@ -312,9 +313,6 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                             if (gagnant != null && marquerPartieFinie()) {
                                 final String nomGagnant = gagnant; // final nécessaire pour l'utiliser dans le Runnable
                                 gestionnaire.deconnecter(joueurId);
-                                reinitialiserDisponibilites(); // Remet les disponibilités à 1
-                                gestionnaire.reinitialiser();
-                                if (gestionnaireMonstres != null) gestionnaireMonstres.reinitialiser();
                                 SwingUtilities.invokeLater(new Runnable() {
                                     @Override
                                     public void run() {

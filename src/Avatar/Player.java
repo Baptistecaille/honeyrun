@@ -44,6 +44,10 @@ public class Player extends Avatar {
     private volatile ArrayList<DonneesJoueur> autresJoueurs = new ArrayList<>(); // snapshot DB des autres joueurs
     private GestionnaireJoueurs gestionnaire; // référence pour appeler volerMiel() en DB
     private int joueurId; // identifiant DB du joueur local
+
+    // Protection du porteur : 1 seconde après avoir obtenu le miel, il ne peut pas se le faire voler
+    private int currentCarrierId = -1;        // ID du joueur qui porte actuellement le miel (-1 = personne)
+    private long porteurProtectedUntil = 0;   // timestamp de fin de protection du porteur actuel
     
 
     public Player(
@@ -279,8 +283,16 @@ public class Player extends Avatar {
         // Pas de vol si on a déjà le miel, si on est invincible, ou si le gestionnaire n'est pas injecté
         if (hasHoney || now < invincibleUntil || gestionnaire == null) return;
         ArrayList<DonneesJoueur> snapshot = autresJoueurs;
+        boolean porteurTrouve = false;
         for (DonneesJoueur j : snapshot) {
             if (!j.hasHoney) continue;
+            porteurTrouve = true;
+            // Nouveau porteur détecté (vient d'obtenir le miel) → 1 seconde de protection contre le vol
+            if (j.id != currentCarrierId) {
+                currentCarrierId = j.id;
+                porteurProtectedUntil = now + 1000;
+            }
+            if (now < porteurProtectedUntil) break; // porteur encore dans sa fenêtre de protection
             // Le porteur est protégé sur sa propre zone de spawn : vol impossible là-bas
             Hitbox porteurSpawnZone = new Hitbox(
                 new Coordinates(j.spawnX, j.spawnY),
@@ -290,8 +302,8 @@ public class Player extends Avatar {
                 new Coordinates(j.x, j.y),
                 GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE
             );
-            if (overlaps(porteurHitbox, porteurSpawnZone)) continue; // porteur intouchable sur son spawn
-            if (!overlaps(hitbox, porteurHitbox)) continue; // pas de contact
+            if (overlaps(porteurHitbox, porteurSpawnZone)) break; // porteur intouchable sur son spawn
+            if (!overlaps(hitbox, porteurHitbox)) break; // pas de contact
             try {
                 boolean success = gestionnaire.volerMiel(joueurId, j.id);
                 if (success) {
@@ -303,6 +315,8 @@ public class Player extends Avatar {
             }
             break; // un seul vol par tick
         }
+        // Si plus personne n'a le miel (pot revenu au centre), on réinitialise le suivi du porteur
+        if (!porteurTrouve) currentCarrierId = -1;
     }
 
     private void checkWinCondition() {
