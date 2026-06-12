@@ -137,6 +137,23 @@ public class GestionnaireJoueurs {
     }
 
     /**
+     * Attribue le miel au joueur uniquement si personne d'autre ne l'a déjà.
+     * Le UPDATE atomique garantit qu'un seul joueur obtient le miel même si deux terminent la récolte en même temps.
+     * Retourne true si le miel a bien été attribué, false si quelqu'un d'autre l'a déjà pris.
+     */
+    public boolean recolterMiel(int id) throws SQLException {
+        // On attribue le miel uniquement si aucun autre joueur ne l'a (sous-requête dans le WHERE pour atomicité)
+        try (PreparedStatement ps = connexion.prepareStatement(
+                "UPDATE `character` SET hasHoney=1 WHERE id=? " +
+                "AND 0=(SELECT COUNT(*) FROM (SELECT id FROM `character` WHERE hasHoney=1 AND id!=?) AS t)")) {
+            ps.setInt(1, id);
+            ps.setInt(2, id);
+            int rows = ps.executeUpdate();
+            return rows > 0; // 0 ligne modifiée = quelqu'un d'autre avait déjà le miel
+        }
+    }
+
+    /**
      * Tente un vol atomique du miel : retire le miel du porteur (idPorteur) et le donne au voleur (idVoleur).
      * Le UPDATE conditionnel (AND hasHoney=1) empêche deux voleurs simultanés de réussir en même temps.
      * Retourne true si le vol a réussi, false si le porteur n'avait plus le miel (quelqu'un d'autre plus rapide).

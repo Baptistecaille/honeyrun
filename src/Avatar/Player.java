@@ -219,7 +219,15 @@ public class Player extends Avatar {
                 isHarvesting = true;
                 harvestStartTime = now;
             } else if (now - harvestStartTime >= 3000) {
-                hasHoney = true;
+                
+                // évite que deux joueurs qui terminent leur timer en même temps aient tous les deux le miel
+                try {
+                    if (gestionnaire != null && gestionnaire.recolterMiel(joueurId)) {
+                        hasHoney = true;
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
                 isHarvesting = false;
                 harvestStartTime = 0;
             }
