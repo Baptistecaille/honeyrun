@@ -1,5 +1,6 @@
 package multiplayer;
 
+import Avatar.GameConstants;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,7 +20,7 @@ import javax.swing.JOptionPane;
  */
 public class GestionnaireJoueurs {
 
-    // Coordonnées de spawn fixes par numéro d'avatar 60x34 tuiles (1920x1088 pixels)
+    // Coordonnées de spawn fixes par numéro d'avatar sur la carte 60x34 tuiles
     private static final double[] SPAWN_X = {95, 1825, 95,  1825}; // to modify accoording to the map area
     private static final double[] SPAWN_Y = {95, 95,  993, 993}; // to modify accoording to the map area
     private static final String VERROU_MIEL = "honeyrun_unique_honey";
@@ -60,6 +61,8 @@ public class GestionnaireJoueurs {
 
         double spawnX = SPAWN_X[avatarChoisi - 1];
         double spawnY = SPAWN_Y[avatarChoisi - 1];
+        double tuileSpawnX = convertirCoordonneeEnTuile(spawnX);
+        double tuileSpawnY = convertirCoordonneeEnTuile(spawnY);
 
         try (PreparedStatement ps = connexion.prepareStatement(
                 "INSERT INTO `character` (pseudo, spawnX, spawnY, X, Y, hasWin, hasHoney, skin, lifes) "
@@ -68,8 +71,8 @@ public class GestionnaireJoueurs {
             ps.setString(1, pseudo);
             ps.setDouble(2, spawnX);
             ps.setDouble(3, spawnY);
-            ps.setDouble(4, spawnX);
-            ps.setDouble(5, spawnY);
+            ps.setDouble(4, tuileSpawnX);
+            ps.setDouble(5, tuileSpawnY);
             ps.setString(6, String.valueOf(avatarChoisi));
             ps.executeUpdate();
 
@@ -87,16 +90,24 @@ public class GestionnaireJoueurs {
      */
     // hasHoney n'est plus écrit ici : seuls recolterMiel(), volerMiel() et perdreLeHmiel() modifient cette colonne
     // (évite que le thread de sync écrase un vol en réécrivant l'ancien état local)
-    public void mettreAJourPosition(int id, double x, double y, int lifes)
+    public void mettreAJourPosition(int id, double tuileX, double tuileY, int lifes)
             throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
                 "UPDATE `character` SET X=?, Y=?, lifes=? WHERE id=?")) {
-            ps.setDouble(1, x);
-            ps.setDouble(2, y);
+            ps.setDouble(1, tuileX);
+            ps.setDouble(2, tuileY);
             ps.setInt(3, lifes);
             ps.setInt(4, id);
             ps.executeUpdate();
         }
+    }
+
+    private double convertirCoordonneeEnTuile(double valeur) {
+        return Math.round(valeur / GameConstants.TILE_SIZE);
+    }
+
+    private double convertirTuileEnCoordonnee(double tuile) {
+        return tuile * GameConstants.TILE_SIZE;
     }
 
     // Remet hasHoney à 0 quand un monstre touche le porteur (appelé explicitement depuis Player)
@@ -130,8 +141,8 @@ public class GestionnaireJoueurs {
                 joueurs.add(new DonneesJoueur(
                     rs.getInt("id"),
                     rs.getString("pseudo"),
-                    rs.getDouble("X"),
-                    rs.getDouble("Y"),
+                    convertirTuileEnCoordonnee(rs.getDouble("X")),
+                    convertirTuileEnCoordonnee(rs.getDouble("Y")),
                     rs.getDouble("spawnX"),
                     rs.getDouble("spawnY"),
                     skin,

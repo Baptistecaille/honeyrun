@@ -202,21 +202,33 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         return true;
     }
 
-    private double alignerSurGrille(double valeur) {
-        return Math.round(valeur / GameConstants.TILE_SIZE) * GameConstants.TILE_SIZE;
+    private double convertirCoordonneeEnTuile(double valeur) {
+        return Math.round(valeur / GameConstants.TILE_SIZE);
     }
 
-    private double[] creerPositionBaseDeDonnees(Player player) {
+    private double convertirTuileEnCoordonnee(double tuile) {
+        return tuile * GameConstants.TILE_SIZE;
+    }
+
+    private double[] creerPositionTuilesPourBaseDeDonnees(Player player) {
         double[] position = player.getPositionSnapshot();
         return new double[] {
-            alignerSurGrille(position[0]),
-            alignerSurGrille(position[1])
+            convertirCoordonneeEnTuile(position[0]),
+            convertirCoordonneeEnTuile(position[1])
+        };
+    }
+
+    private double[] creerPositionJoueurDepuisTuiles(Player player) {
+        double[] tuiles = creerPositionTuilesPourBaseDeDonnees(player);
+        return new double[] {
+            convertirTuileEnCoordonnee(tuiles[0]),
+            convertirTuileEnCoordonnee(tuiles[1])
         };
     }
 
     private DonneesJoueur creerDonneesJoueurLocal() {
         Player player = jeu.getPlayer();
-        double[] position = creerPositionBaseDeDonnees(player);
+        double[] position = creerPositionJoueurDepuisTuiles(player);
         return new DonneesJoueur(
             joueurId,
             player.getName(),
@@ -269,7 +281,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         // On écrit notre état en DB EN PREMIER, puis on lit.
                         // Si on lit avant d'écrire, un hasHoney=true fraîchement récolté n'est pas encore en DB,
                         // et la détection de vol ci-dessous appelle onMielVole() à tort.
-                        double[] positionLocale = creerPositionBaseDeDonnees(jeu.getPlayer());
+                        double[] positionLocale = creerPositionTuilesPourBaseDeDonnees(jeu.getPlayer());
                         gestionnaire.mettreAJourPosition(
                             joueurId,
                             positionLocale[0],
