@@ -202,9 +202,21 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
         return true;
     }
 
+    private double alignerSurGrille(double valeur) {
+        return Math.round(valeur / GameConstants.TILE_SIZE) * GameConstants.TILE_SIZE;
+    }
+
+    private double[] creerPositionBaseDeDonnees(Player player) {
+        double[] position = player.getPositionSnapshot();
+        return new double[] {
+            alignerSurGrille(position[0]),
+            alignerSurGrille(position[1])
+        };
+    }
+
     private DonneesJoueur creerDonneesJoueurLocal() {
         Player player = jeu.getPlayer();
-        double[] position = player.getPositionSnapshot();
+        double[] position = creerPositionBaseDeDonnees(player);
         return new DonneesJoueur(
             joueurId,
             player.getName(),
@@ -257,7 +269,7 @@ public class FenetreDeJeu extends JFrame implements ActionListener, KeyListener 
                         // On écrit notre état en DB EN PREMIER, puis on lit.
                         // Si on lit avant d'écrire, un hasHoney=true fraîchement récolté n'est pas encore en DB,
                         // et la détection de vol ci-dessous appelle onMielVole() à tort.
-                        double[] positionLocale = jeu.getPlayer().getPositionSnapshot();
+                        double[] positionLocale = creerPositionBaseDeDonnees(jeu.getPlayer());
                         gestionnaire.mettreAJourPosition(
                             joueurId,
                             positionLocale[0],
