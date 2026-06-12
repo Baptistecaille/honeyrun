@@ -198,6 +198,7 @@ public class Jeu {
         // Le mouvement du joueur est géré par son thread interne (startMovement)
         this.calque1.miseAJour();
         this.calque2.miseAJour();
+        this.minimap = this.calque2.genererImageMiniMapAvecPointTuile(300, 225, this.player.getX(), this.player.getY(),Color.BLACK);
        
        
         if (this.player.hasHoney()){
