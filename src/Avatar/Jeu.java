@@ -97,7 +97,6 @@ public class Jeu {
         Hitbox playerHitbox = new Hitbox(new Coordinates(playerSpawnX, playerSpawnY), GameConstants.PLAYER_SIZE, GameConstants.PLAYER_SIZE);
         Player P1 = new Player(playerSpawnX, playerSpawnY, GameConstants.PLAYER_SPEED, playerHitbox, hiveZone, spawnZone, this.monsters, playerName);
         P1.setImage(sprite);
-        P1.setMovementBounds(0, 0, GameConstants.SCREEN_WIDTH - playerHitbox.getWidth(), GameConstants.SCREEN_HEIGHT - playerHitbox.getHeight());
         P1.startMovement();
         this.player = P1;
         this.player.setCollisionMap(this.collisionMap);

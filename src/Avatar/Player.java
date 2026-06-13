@@ -235,8 +235,7 @@ public class Player extends Avatar {
 
     public double getX() { synchronized (position) { return position.getX(); } }
     public double getY() { synchronized (position) { return position.getY(); } }
-//    public double getXTiles() { synchronized (position) { return position.getX()/TILE_SIZE; }}
-//    public double getYTiles() { synchronized (position) { return position.getY()/TILE_SIZE; }}
+
     public double getMaxSpeed() { return speed; }
     public String getName() { return name; }
     public Coordinates getSpawn() { return new Coordinates(spawn.getX(), spawn.getY()); }
@@ -269,12 +268,7 @@ public class Player extends Avatar {
         this.toucheBas = etat;
     }
 
-    public void setMovementBounds(int minX, int minY, double maxX, double maxY) {
-        this.boundsMinX = minX;
-        this.boundsMinY = minY;
-        this.boundsMaxX = maxX;
-        this.boundsMaxY = maxY;
-    }
+
 
    
 }
