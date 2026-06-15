@@ -1,172 +1,255 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Avatar;
-
-import Tools.Avatar;
-import Tools.Coordinates;
+import TileMapping.Carte;
+import TileMapping.CollisionMap;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
+import java.util.ArrayList;
 
-/**
- *
- * @author alamas
- */
+import Tools.Coordinates;
+import Tools.Hitbox;
+
+public class Player extends Avatar {
+    private static final double TILE_SIZE = GameConstants.TILE_SIZE;
+
+    // Ces drapeaux sont lus par un thread de mouvement et ecrits par Swing, donc ils doivent etre visibles partout.
+    private volatile boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
+
+    private final String name;
+    private final Coordinates spawn;
+
+    private volatile int lives = 3;
+    private volatile boolean hasHoney = false;
+    private volatile boolean isHarvesting = false;
+    private volatile long harvestStartTime = 0;
+
+    private final Hitbox hiveZone, spawnZone;
+    private final ArrayList<Monsters> monsters;
+
+    // GameConstants est un fichier qui contient toutes les variables importantes du jeu
+    private double boundsMinX = 0, boundsMinY = 0;
+    private double boundsMaxX = GameConstants.SCREEN_WIDTH, boundsMaxY = GameConstants.SCREEN_HEIGHT;
 
 
-public class Player {
+    private volatile boolean running = false;
+    private Thread movementThread;
+
+    private volatile long invincibleUntil = 0;
+    private volatile boolean won = false;
+    private volatile boolean gameOver = false;
+    private CollisionMap collisionMap;
     
-    //protected BufferedImage sprite;//une image ou une animation bidimensionnelle intégrée dans une scène ou un environnement de jeu plus vaste
-    private Avatar avatar;
-    private Coordinates spawn;
-    private boolean toucheGauche, toucheDroite, toucheHaut, toucheBas;
-    private int score;
-    private String name;
-    private int lives;            // vies du joueur 
-    private boolean hasHoney ;   // le joeur possède ou non du miel
-    private boolean isHarvesting ; // le joueur est-il entrain de collecter du miel ?
-    private long harvestStartTime ;// Timestamp when harvesting started (in milliseconds since epoch)
-    private boolean hasWin; // le joueur a-t-il gagné?
-    private boolean hasLost; // le joueur a-t-il encore des vies ?
 
-//    private BufferedImage redimensionner(BufferedImage img, int largeur, int hauteur) {
-//    // On crée une nouvelle image avec la transparence (TYPE_INT_ARGB)
-//    BufferedImage nouvelleImage = new BufferedImage(largeur, hauteur, BufferedImage.TYPE_INT_ARGB);
-//    Graphics2D g2d = nouvelleImage.createGraphics();
-//    
-//    // On active le lissage pour une meilleure qualité
-//    g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, 
-//                         java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-//    
-//    // On dessine l'ancienne image dans la nouvelle
-//    g2d.drawImage(img, 0, 0, largeur, hauteur, null);
-//    g2d.dispose();
-    
-//    return nouvelleImage;
-//}
-//    
-    public Player(Avatar avatar, Coordinates spawn, String name) {
-//        try {
-//            this.sprite = ImageIO.read(getClass().getResource("/resources/bee.png"));
-//            this.sprite=redimensionner(this.sprite,70,70);
-//        } catch (IOException ex) {
-//            Logger.getLogger(Player.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-        this.avatar=avatar;
-        this.name=name;
-        this.spawn=spawn;
-        this.avatar.getPosition().setX(this.spawn.getX());
-        this.avatar.getPosition().setY(this.spawn.getY());
-        this.score=0;
+    public Player(
+        double spawnX,
+        double spawnY,
+        double speed,
+        Hitbox hitbox,
+        Hitbox hiveZone,
+        Hitbox spawnZone,
+        ArrayList<Monsters> monsters,
+        String name
+    ) {
+        super(new Coordinates(spawnX, spawnY), null, speed, hitbox);
+        this.spawn = new Coordinates(spawnX, spawnY);
+        this.name = name;
+        this.hiveZone = hiveZone;
+        this.spawnZone = spawnZone;
+        this.monsters = monsters != null ? monsters : new ArrayList<>(); // si la liste de monstres est null, on en crée une vide pour éviter les NullPointerException
         this.toucheGauche = false; 
         this.toucheDroite = false;
         this.toucheBas = false;
         this.toucheHaut=false;
-        this.lives=3;
-        this.hasHoney=false;
-        this.isHarvesting=false;
-        this.hasWin=false;
-        this.hasLost=false;
-        
+
+        if (this.hitbox != null) {
+            this.hitbox.update(this.position);
+        }
     }
 
-    public void miseAJour() {
+    @Override
+    public void startMovement() {
+        if (running) return;
+        running = true;
+
+        movementThread = new Thread(() -> {
+            long lastTime = System.currentTimeMillis();
+
+            while (running) {
+                long now = System.currentTimeMillis();
+                double dt = (now - lastTime) / 1000.0;
+                lastTime = now;
+
+                miseAJour(dt,this.collisionMap);
+                syncHitbox();
+                updateHarvesting(now);
+                handleMonsterCollisions(now);
+                checkWinCondition();
+
+                try { Thread.sleep(16); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; } // ~60 FPS
+            }
+        }, "player-movement");
+
+        movementThread.start();
+    }
+    // on utilise les variables qui sont dans GameConstants.java pour unifier le code. 
+     public void rendu(Graphics2D contexte, int displayWidth, int displayHeight) {
+        contexte.drawImage(this.getImage(), GameConstants.LOCAL_PLAYER_SCREEN_X, GameConstants.LOCAL_PLAYER_SCREEN_Y, displayWidth, displayHeight, null);
+    }
+
+    @Override
+    public void stopMovement() {
+        // On coupe la boucle de mouvement et on reveille le thread s'il dort encore.
+        running = false;
+        if (movementThread != null) {
+            movementThread.interrupt();
+        }
+    }
+
+
+    
+    public void miseAJour(double dt, CollisionMap map) {
+        int col = (int)(this.position.getX() / TILE_SIZE); // colonne de tuile
+        int row = (int)(this.position.getY() / TILE_SIZE); // ligne de tuile
+        double speedFactor = map.getSpeedFactor(col, row); // facteur de vitesse ralenti ou pas en fonction des tuiles (tuile 414)
         if (this.toucheGauche){
-            double x = this.avatar.getPosition().getX();
-            x-= 5;
-            this.avatar.getPosition().setX(x);
+            double x = this.getPosition().getX();
+            double newX= x - (1*this.speed *speedFactor * TILE_SIZE * dt);
+            col = (int)(newX / TILE_SIZE);
+            if (!map.isMur(col,row)){ // tuiles 415
+                this.position.setX(newX);
+            }
         }
         if (this.toucheDroite){
-            double x = this.avatar.getPosition().getX();
-            x+= 5;
-            this.avatar.getPosition().setX(x);
+            double x = this.getPosition().getX();
+            double newX= x+ (1*this.speed * speedFactor * TILE_SIZE * dt);
+            col = (int)(newX / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setX(newX);
+            }
         }
         if (this.toucheBas){
-            double y = this.avatar.getPosition().getY();
-            y+= 5;
-            this.avatar.getPosition().setY(y);
+            double y = this.getPosition().getY();
+            double newY = y+ (1*this.speed* speedFactor * TILE_SIZE * dt);
+             row = (int)(newY / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setY(newY);
+            }
         }
         if (this.toucheHaut){
-            double y = this.avatar.getPosition().getY();
-            y-= 5;
-            this.avatar.getPosition().setY(y);
+            double y = this.getPosition().getY();
+            double newY = y - (1*this.speed * speedFactor * TILE_SIZE * dt);
+             row = (int)(newY / TILE_SIZE);
+            if (!map.isMur(col,row)){
+                this.position.setY(newY);
+            }
         }
-        if (this.avatar.getPosition().getX()> 1920 - this.avatar.getImage().getWidth()){// collision avec le bord droit de la scene
-            this.avatar.getPosition().setX( 1920 - this.avatar.getImage().getWidth());
+//        if (this.getPosition().getX()> GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE){// collision avec le bord droit de la scene, taille de la hitbox
+//            this.position.setX( GameConstants.SCREEN_WIDTH - GameConstants.PLAYER_SIZE);
+//        }
+//        if (this.getPosition().getX()<0){// collision avec le bord gauche de la scene
+//            this.position.setX(0);
+//        }   
+//        if(this.getPosition().getY()> GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE){  // collision avec le bord bas de la scene
+//            this.position.setY(GameConstants.SCREEN_HEIGHT - GameConstants.PLAYER_SIZE);
+//        }
+//        if (this.getPosition().getY()<0){// collision avec le bord haut de la scene
+//            this.position.setY(0); 
+//        }
+ // les lignes précédentes étaient au début quand on avait pas les collisions
         }
-        if (this.avatar.getPosition().getX()<0){// collision avec le bord gauche de la scene
-           this.avatar.getPosition().setX(0);
-        }   
-        if(this.avatar.getPosition().getY()> 1088 - this.avatar.getImage().getHeight()){  // collision avec le bord bas de la scene
-           this.avatar.getPosition().setY(1088 - this.avatar.getImage().getHeight());
-        }
-        if (this.avatar.getPosition().getY()<0){// collision avec le bord haut de la scene
-            this.avatar.getPosition().setY(0);
-        }
-        }
+    
+    public void setCollisionMap(CollisionMap map) {
+    this.collisionMap = map;
+}
         
-    
 
-    public void rendu(Graphics2D contexte) {
-        contexte.drawImage(this.avatar.getImage(), (int) this.avatar.getPosition().getX(), (int)this.avatar.getPosition().getY(), null);
+
+    private void syncHitbox() {
+        if (hitbox == null) return;
+        synchronized (position) {
+            hitbox.update(position);
+        }
     }
 
-    public Avatar getAvatar() {
-        return avatar;
+    private void updateHarvesting(long now) {
+        if (hiveZone == null) return;
+        if (overlaps(hitbox, hiveZone)) {
+            if (!isHarvesting) {
+                isHarvesting = true;
+                harvestStartTime = now;
+            } else if (now - harvestStartTime >= 3000) {
+                hasHoney = true;
+                isHarvesting = false;
+                harvestStartTime = 0;
+            }
+        } else {
+            isHarvesting = false;
+            harvestStartTime = 0;
+        }
     }
 
-    public void setAvatar(Avatar avatar) {
-        this.avatar = avatar;
+    private void handleMonsterCollisions(long now) {
+        if (monsters == null || now < invincibleUntil) return;
+        if (spawnZone != null && overlaps(hitbox, spawnZone)) return;
+        for (Monsters monster : monsters) {
+            if (overlaps(hitbox, monster.getHitbox())) {
+                lives = Math.max(0, lives - 1);
+                hasHoney = false;
+                isHarvesting = false;
+                harvestStartTime = 0;
+
+                synchronized (position) {
+                    position.setX(spawn.getX());
+                    position.setY(spawn.getY());
+                }
+                syncHitbox();
+
+                invincibleUntil = now + 1000;
+
+                if (lives == 0) {
+                    gameOver = true;
+                    running = false;
+                }
+                break;
+            }
+        }
     }
 
-    public void setSpawn(Coordinates spawn) {
-        this.spawn = spawn;
+    private void checkWinCondition() {
+        if (spawnZone == null) return;
+        if (hasHoney && overlaps(hitbox, spawnZone)) {
+            hasHoney = false;
+            won = true;
+            running = false;
+        }
     }
 
-    public void setScore(int score) {
-        this.score = score;
+    //fonction interne qui calcule si deux hitbox se chevauchent
+    private boolean overlaps(Hitbox a, Hitbox b) {
+        return a.getX() < b.getX() + b.getWidth()
+            && a.getX() + a.getWidth() > b.getX()
+            && a.getY() < b.getY() + b.getHeight()
+            && a.getY() + a.getHeight() > b.getY();
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    
-
-    public Coordinates getSpawn() {
-        return spawn;
-    }
-
-    public int getScore() {
-        return score;
-    }
-
-    public String getName() {
-        return name;
-    }
-    
-    
-    
+  
 
 
-    
-//    public double getLargeur() {
-//        return sprite.getHeight();
-//    }
-//
-//    public double getHauteur() {
-//        return sprite.getWidth();
-//    }
+    public double getX() { synchronized (position) { return position.getX(); } }
+    public double getY() { synchronized (position) { return position.getY(); } }
+
+    public double getMaxSpeed() { return speed; }
+    public String getName() { return name; }
+    public Coordinates getSpawn() { return new Coordinates(spawn.getX(), spawn.getY()); }
+    public int getLives() { return lives; }
+    public boolean hasHoney() { return hasHoney; }
+    public boolean isHarvesting() { return isHarvesting; }
+    public long getHarvestStartTime() { return harvestStartTime; }
+    public long getInvincibleUntil() { return invincibleUntil; }
+    public boolean isRunning() { return running; }
+    public boolean isWon() { return won; }
+    public boolean isGameOver() { return gameOver; }
+
+
+
     
     public void setToucheDroite(boolean etat){
         this.toucheDroite = etat;
@@ -184,6 +267,8 @@ public class Player {
     public void setToucheBas(boolean etat){
         this.toucheBas = etat;
     }
-    
-    
+
+
+
+   
 }

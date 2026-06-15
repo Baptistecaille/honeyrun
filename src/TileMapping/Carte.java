@@ -5,12 +5,16 @@
  */
 package TileMapping;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -62,11 +66,11 @@ public class Carte {
         
         // Fusion avec le deuxième constructeur de la classse carte
         try {
-            BufferedImage tileset = ImageIO.read(getClass().getResource("images/tileSetMinecraft32x32.png"));
-            tuiles = new BufferedImage[192];
+            BufferedImage tileset = ImageIO.read(getClass().getResource("images/TileSetRpg.png"));
+            tuiles = new BufferedImage[432];
             for (int i = 0; i < tuiles.length; i++) {
-                int x = (i % 16) * tailleTuile;
-                int y = (i / 16) * tailleTuile;
+                int x = (i % 24) * tailleTuile;
+                int y = (i / 24) * tailleTuile;
                 tuiles[i] = tileset.getSubimage(x, y, tailleTuile, tailleTuile);
             }
         } catch (IOException ex) {
@@ -75,7 +79,7 @@ public class Carte {
         
         try {
             // Ouverture du fichier en lecture avec un BufferedReader
-            BufferedReader fichier = new BufferedReader(new FileReader(nomdufichier));
+            BufferedReader fichier = ouvrirCarte(nomdufichier);
 
             String ligne;
 
@@ -117,6 +121,26 @@ public class Carte {
             e.printStackTrace();
         }
     }
+
+    private BufferedReader ouvrirCarte(String nomdufichier) throws IOException {
+        // On garde le chemin disque pour le dev, mais on sait aussi relire la carte depuis les ressources.
+        File fichierLocal = new File(nomdufichier);
+        if (fichierLocal.exists()) {
+            return new BufferedReader(new FileReader(fichierLocal));
+        }
+
+        String cheminRessource = nomdufichier.replace('\\', '/');
+        if (cheminRessource.startsWith("src/")) {
+            cheminRessource = cheminRessource.substring(4);
+        }
+
+        InputStream flux = getClass().getResourceAsStream("/" + cheminRessource);
+        if (flux != null) {
+            return new BufferedReader(new InputStreamReader(flux));
+        }
+
+        throw new IOException("Carte introuvable: " + nomdufichier);
+    }
     /**
      * Méthode de mise à jour de la carte.
      * Actuellement vide — prévu pour de la logique d'animation ou d'événements.
@@ -138,7 +162,7 @@ public class Carte {
     public void rendu(Graphics2D contexte, int x, int y) {
     for (int i = 0; i < decor.length; i++) {
         for (int j = 0; j < decor[i].length; j++) {
-            int tuileParDefaut = 26;
+            int tuileParDefaut = 144;
             int numeroTuile;
 
             // Vérifie si on est hors limites
@@ -155,13 +179,126 @@ public class Carte {
             int offsetX = 10;
             int offsetY = 5;
             
+            
             if (numeroTuile < tuiles.length) { // on dessine notre tuile
-                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - offsetY + 5),tailleTuile * zoom,tailleTuile * zoom,null);
+                contexte.drawImage(tuiles[numeroTuile],zoom * tailleTuile * (j - x + offsetX),zoom * tailleTuile * (i - y + offsetY ),tailleTuile * zoom,tailleTuile * zoom,null);
             }
         }
     }
-  }
 }
+    
+public BufferedImage genererImageMiniMapAvecPointTuile(int largeur, int hauteur, double PosX, double PosY, Color couleur) {
+  
+    // ÉTAPES 1 & 2 : Générer la minimap de base
+    
+    int cartePixelW = decor[0].length * tailleTuile;  // On récup longueur carte
+    int cartePixelH = decor.length * tailleTuile;   // On récup hauteur carte
+    
+    BufferedImage imageComplete = new BufferedImage(cartePixelW, cartePixelH, BufferedImage.TYPE_INT_ARGB); // On crée une image vide
+    Graphics2D g = imageComplete.createGraphics(); // On crée un objet g pour dessiner sur notre image vide
+    
+    // On dessine notre map sur l'image vide à l'aide des tuiles 
+    
+    for (int i = 0; i < decor.length; i++) {
+        for (int j = 0; j < decor[i].length; j++) {
+            int numeroTuile = decor[i][j];
+            if (numeroTuile <= 0 || numeroTuile >= tuiles.length) continue;
+            g.drawImage(tuiles[numeroTuile], 
+                       j * tailleTuile, 
+                       i * tailleTuile, 
+                       tailleTuile, 
+                       tailleTuile, 
+                       null);
+        }
+    }
+    g.dispose();
+    
+    BufferedImage minimap = new BufferedImage(largeur, hauteur, BufferedImage.TYPE_INT_ARGB); // On crée notre minimap vide
+    Graphics2D gMini = minimap.createGraphics(); // On crée un nouvel objet pour dessiner sur notre minimap
+    gMini.drawImage(imageComplete, 0, 0, largeur, hauteur, null); // Permet de dessiner la mini map par dessus notre map de base 
+    
+    // ÉTAPE 3 : CONVERTIR LA POSITION EN TUILES → PIXELS → MINIMAP
+  
+    // Convertir position en tuiles → position en pixels (sur la carte complète)
+    // Exemple : tuile (5, 3) avec tailleTuile=32 → pixel (160, 96)
+    int pixelX = (int) PosX;
+    int pixelY = (int) PosY; 
+    
+    // Ajouter un offset pour centrer le point au milieu de la tuile
+    // (au lieu d'être en haut à gauche)
+    pixelX += tailleTuile / 2;
+    pixelY += tailleTuile / 2;
+    
+    // Calculer les ratios d'échelle
+    float ratioX = (float) largeur / cartePixelW;
+    float ratioY = (float) hauteur / cartePixelH;
+    
+    // Convertir les pixels vers les coordonnées de la minimap
+    int pointX = Math.round(pixelX * ratioX);
+    int pointY = Math.round(pixelY * ratioY);
+
+    // DESSINER LE POINT SUR LA MINIMAP
+    
+    int rayonPoint = 3;
+    int diametre = rayonPoint * 2;
+    
+    // Dessiner le cercle rempli
+    gMini.setColor(couleur);
+    gMini.fillOval(pointX - rayonPoint, pointY - rayonPoint, diametre, diametre);
+    
+    // Contour noir
+    gMini.setColor(Color.BLACK);
+    gMini.setStroke(new BasicStroke(1.5f));
+    gMini.drawOval(pointX - rayonPoint, pointY - rayonPoint, diametre, diametre);
+    
+    gMini.dispose();
+    return minimap;
+}
+  
+    public int[][] getDecor() {
+        return decor;
+}
+    
+  public void afficherCoeurs(Graphics2D contexte, int nbr_life) {
+    try {
+        BufferedImage coeurPlein = ImageIO.read(getClass().getResource("images/Coeurplein32.png"));
+        BufferedImage coeurVide = ImageIO.read(getClass().getResource("images/Coeurvide32.png"));
+        
+        int zoom = 2;
+        int espacement = 30;
+        int max_life = 3;
+        
+        // Afficher 3 cœurs
+        for (int i = 0; i < nbr_life; i++) {
+            contexte.drawImage(coeurPlein, 20 + (i * espacement*zoom), 50, 32 * zoom, 32 * zoom, null);
+        }
+        for (int i = nbr_life ; i < max_life; i++){
+             contexte.drawImage(coeurVide, 20 + (i * espacement*zoom), 50, 32 * zoom, 32 * zoom, null);
+        }
+        
+    } catch (IOException ex) {
+        System.out.println("Erreur : image non trouvée");
+    }
+    }
+  }
+    
+//Méthode pour savoir si on a une collision ou non 
+//    public prochainetuileaccessible (double x, double y){
+//        int Col = 1;
+//        int n = 32 ;
+//        int Xc = (int)Math.ceil(x/(double)n) ;
+//        int Yc = (int)Math.ceil(y/(double)n) ;
+//        if (decor[Xc][Yc] == 79){
+//            Col = -1 ;
+//        }
+//        else {
+//            Col = 1 ;
+//        }    
+//        
+//        
+//        
+//    }
+//}
 
  
 //    public void rendu(Graphics2D contexte, int x , int y) {

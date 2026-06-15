@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
 import javax.swing.JOptionPane;
 
 /**
@@ -18,9 +18,9 @@ import javax.swing.JOptionPane;
  */
 public class GestionnaireJoueurs {
 
-    // Coordonnées de spawn fixes par numéro d'avatar (fenêtre 800x600)
-    private static final double[] SPAWN_X = {0, 20, 744, 20,  744};
-    private static final double[] SPAWN_Y = {0, 20, 20,  544, 544};
+    // Coordonnées de spawn fixes par numéro d'avatar 60x34 tuiles (1920x1088 pixels)
+    private static final double[] SPAWN_X = {95, 1825, 95,  1825}; // to modify accoording to the map area
+    private static final double[] SPAWN_Y = {95, 95,  993, 993}; // to modify accoording to the map area
 
     private final Connection connexion;
 
@@ -36,10 +36,10 @@ public class GestionnaireJoueurs {
      */
     public DonneesJoueur connecter(String pseudo) throws SQLException {
         Set<Integer> avatarsPris = new HashSet<>();
-        try (PreparedStatement ps = connexion.prepareStatement("SELECT avatar FROM joueur")) {
+        try (PreparedStatement ps = connexion.prepareStatement("SELECT skin FROM `character`")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                avatarsPris.add(rs.getInt("avatar"));
+                try { avatarsPris.add(Integer.valueOf(rs.getString("skin"))); } catch (NumberFormatException ignored) {}
             }
         }
 
@@ -56,11 +56,11 @@ public class GestionnaireJoueurs {
             return null;
         }
 
-        double spawnX = SPAWN_X[avatarChoisi];
-        double spawnY = SPAWN_Y[avatarChoisi];
+        double spawnX = SPAWN_X[avatarChoisi - 1];
+        double spawnY = SPAWN_Y[avatarChoisi - 1];
 
         try (PreparedStatement ps = connexion.prepareStatement(
-                "INSERT INTO joueur (nom, spawnx, spawny, x, y, haswin, hashoney, avatar, lifes) "
+                "INSERT INTO `character` (pseudo, spawnX, spawnY, X, Y, hasWin, hasHoney, skin, lifes) "
                 + "VALUES (?, ?, ?, ?, ?, 0, 0, ?, 3)",
                 Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, pseudo);
@@ -68,7 +68,7 @@ public class GestionnaireJoueurs {
             ps.setDouble(3, spawnY);
             ps.setDouble(4, spawnX);
             ps.setDouble(5, spawnY);
-            ps.setInt(6, avatarChoisi);
+            ps.setString(6, String.valueOf(avatarChoisi));
             ps.executeUpdate();
 
             ResultSet keys = ps.getGeneratedKeys();
@@ -86,7 +86,7 @@ public class GestionnaireJoueurs {
     public void mettreAJourPosition(int id, double x, double y, boolean hasHoney, int lifes)
             throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE joueur SET x=?, y=?, hashoney=?, lifes=? WHERE id=?")) {
+                "UPDATE `character` SET X=?, Y=?, hasHoney=?, lifes=? WHERE id=?")) {
             ps.setDouble(1, x);
             ps.setDouble(2, y);
             ps.setDouble(3, hasHoney ? 1.0 : 0.0);
@@ -99,22 +99,24 @@ public class GestionnaireJoueurs {
     /**
      * Lit toutes les lignes de la table joueur.
      */
-    public List<DonneesJoueur> lireTousLesJoueurs() throws SQLException {
-        List<DonneesJoueur> joueurs = new ArrayList<>();
+    public ArrayList<DonneesJoueur> lireTousLesJoueurs() throws SQLException {
+        ArrayList<DonneesJoueur> joueurs = new ArrayList<>();
         try (PreparedStatement ps = connexion.prepareStatement(
-                "SELECT id, nom, x, y, spawnx, spawny, avatar, hashoney, haswin, lifes FROM joueur")) {
+                "SELECT id, pseudo, X, Y, spawnX, spawnY, skin, hasHoney, hasWin, lifes FROM `character`")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                int skin;
+                try { skin = Integer.parseInt(rs.getString("skin")); } catch (NumberFormatException e) { skin = 0; }
                 joueurs.add(new DonneesJoueur(
                     rs.getInt("id"),
-                    rs.getString("nom"),
-                    rs.getDouble("x"),
-                    rs.getDouble("y"),
-                    rs.getDouble("spawnx"),
-                    rs.getDouble("spawny"),
-                    rs.getInt("avatar"),
-                    rs.getDouble("hashoney") != 0,
-                    rs.getBoolean("haswin"),
+                    rs.getString("pseudo"),
+                    rs.getDouble("X"),
+                    rs.getDouble("Y"),
+                    rs.getDouble("spawnX"),
+                    rs.getDouble("spawnY"),
+                    skin,
+                    rs.getBoolean("hasHoney"),
+                    rs.getBoolean("hasWin"),
                     rs.getInt("lifes")
                 ));
             }
@@ -127,9 +129,9 @@ public class GestionnaireJoueurs {
      */
     public String detecterVictoire() throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
-                "SELECT nom FROM joueur WHERE haswin = 1 LIMIT 1")) {
+                "SELECT pseudo FROM `character` WHERE hasWin = 1 LIMIT 1")) {
             ResultSet rs = ps.executeQuery();
-            return rs.next() ? rs.getString("nom") : null;
+            return rs.next() ? rs.getString("pseudo") : null;
         }
     }
 
@@ -138,7 +140,7 @@ public class GestionnaireJoueurs {
      */
     public void signalerVictoire(int id) throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
-                "UPDATE joueur SET haswin = 1 WHERE id = ?")) {
+                "UPDATE `character` SET hasWin = 1 WHERE id = ?")) {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
@@ -148,7 +150,7 @@ public class GestionnaireJoueurs {
      * Supprime toutes les lignes (reset après victoire).
      */
     public void reinitialiser() throws SQLException {
-        try (PreparedStatement ps = connexion.prepareStatement("DELETE FROM joueur")) {
+        try (PreparedStatement ps = connexion.prepareStatement("DELETE FROM `character`")) {
             ps.executeUpdate();
         }
     }
@@ -158,7 +160,7 @@ public class GestionnaireJoueurs {
      */
     public void deconnecter(int id) throws SQLException {
         try (PreparedStatement ps = connexion.prepareStatement(
-                "DELETE FROM joueur WHERE id = ?")) {
+                "DELETE FROM `character` WHERE id = ?")) {
             ps.setInt(1, id);
             ps.executeUpdate();
         }

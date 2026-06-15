@@ -1,0 +1,17 @@
+multiplayer/DonneesMonstre.class
+Tools/Coordinates.class
+Avatar/tests/Interface$3.class
+Avatar/FenetreDeJeu.class
+Avatar/Jeu.class
+Avatar/tests/Interface$1.class
+Avatar/Avatar.class
+Tools/Hitbox.class
+multiplayer/SingletonJDBC.class
+multiplayer/DonneesJoueur.class
+multiplayer/GestionnaireJoueurs.class
+Avatar/tests/Interface.class
+Avatar/Monsters.class
+TileMapping/Carte.class
+Avatar/tests/Interface$2.class
+multiplayer/GestionnairesMonstres.class
+Avatar/Player.class
